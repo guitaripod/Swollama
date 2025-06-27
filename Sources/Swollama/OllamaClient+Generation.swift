@@ -64,7 +64,8 @@ extension OllamaClient {
             context: options.context,
             stream: true,
             raw: options.raw,
-            keepAlive: options.keepAlive ?? configuration.defaultKeepAlive
+            keepAlive: options.keepAlive ?? configuration.defaultKeepAlive,
+            think: options.think
         )
 
         return streamRequest(
@@ -137,7 +138,8 @@ extension OllamaClient {
             format: options.format,
             options: options.modelOptions,
             stream: true,
-            keepAlive: options.keepAlive ?? configuration.defaultKeepAlive
+            keepAlive: options.keepAlive ?? configuration.defaultKeepAlive,
+            think: options.think
         )
 
         return streamRequest(

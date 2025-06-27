@@ -16,9 +16,11 @@ public struct ChatRequest: Codable, Sendable {
     public let stream: Bool?
     /// How long to keep model loaded in memory
     public let keepAlive: TimeInterval?
+    /// Whether the model should think before responding (for thinking models)
+    public let think: Bool?
 
     private enum CodingKeys: String, CodingKey {
-        case model, messages, tools, format, options, stream
+        case model, messages, tools, format, options, stream, think
         case keepAlive = "keep_alive"
     }
 
@@ -29,7 +31,8 @@ public struct ChatRequest: Codable, Sendable {
         format: ResponseFormat? = nil,
         options: ModelOptions? = nil,
         stream: Bool? = nil,
-        keepAlive: TimeInterval? = nil
+        keepAlive: TimeInterval? = nil,
+        think: Bool? = nil
     ) {
         self.model = model
         self.messages = messages
@@ -38,6 +41,7 @@ public struct ChatRequest: Codable, Sendable {
         self.options = options
         self.stream = stream
         self.keepAlive = keepAlive
+        self.think = think
     }
 }
 
@@ -52,9 +56,11 @@ public struct ChatMessage: Codable, Sendable {
     public let images: [String]?
     /// Tool calls made by the assistant
     public let toolCalls: [ToolCall]?
+    /// The model's thinking process (for thinking models)
+    public let thinking: String?
 
     private enum CodingKeys: String, CodingKey {
-        case role, content, images
+        case role, content, images, thinking
         case toolCalls = "tool_calls"
     }
 
@@ -62,12 +68,14 @@ public struct ChatMessage: Codable, Sendable {
         role: MessageRole,
         content: String,
         images: [String]? = nil,
-        toolCalls: [ToolCall]? = nil
+        toolCalls: [ToolCall]? = nil,
+        thinking: String? = nil
     ) {
         self.role = role
         self.content = content
         self.images = images
         self.toolCalls = toolCalls
+        self.thinking = thinking
     }
 }
 
