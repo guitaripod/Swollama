@@ -63,7 +63,7 @@ struct DefaultProgressTracker: ProgressTracker {
     // MARK: - Private Helpers
     
     private func calculateBarWidth() -> Int {
-        min(terminalHelper.terminalWidth - 65, Constants.minBarWidth)
+        max(10, min(terminalHelper.terminalWidth - 65, Constants.minBarWidth))
     }
     
     private func handleInitialDiscovery(
@@ -264,8 +264,9 @@ struct ProgressBarFormatter {
     // MARK: - Private Helpers
     
     private static func createProgressSegments(percentage: Double, width: Int) -> (String, String) {
-        let filledWidth = Int(Double(width) * percentage / 100.0)
-        let emptyWidth = width - filledWidth
+        let clampedPercentage = min(max(percentage, 0), 100)
+        let filledWidth = Int(Double(width) * clampedPercentage / 100.0)
+        let emptyWidth = max(0, width - filledWidth)
         
         let filled = Constants.greenColor + String(repeating: Constants.filledChar, count: filledWidth) + Constants.resetColor
         let empty = String(repeating: Constants.emptyChar, count: emptyWidth)
