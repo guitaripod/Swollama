@@ -111,7 +111,7 @@ public actor OllamaClient: OllamaProtocol {
                     request.httpBody = body
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-                    let (dataStream, response) = try await NetworkingSupport.streamTask(session: session, for: request)
+                    let (dataStream, response) = try await NetworkingSupport.enhancedStreamTask(session: session, for: request)
 
                     guard let httpResponse = response as? HTTPURLResponse else {
                         throw OllamaError.invalidResponse
