@@ -35,15 +35,49 @@ struct ListRunningModelsCommand: CommandProtocol {
     }
 
     private func formatDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        let relativeTime = formatter.localizedString(for: date, relativeTo: Date())
-
+        let now = Date()
+        let timeInterval = date.timeIntervalSince(now)
+        
+        // Calculate relative time
+        let relativeTime: String
+        if timeInterval > 0 {
+            // Future date
+            let minutes = Int(timeInterval / 60)
+            let hours = minutes / 60
+            let days = hours / 24
+            
+            if days > 0 {
+                relativeTime = "in \(days) day\(days == 1 ? "" : "s")"
+            } else if hours > 0 {
+                relativeTime = "in \(hours) hour\(hours == 1 ? "" : "s")"
+            } else if minutes > 0 {
+                relativeTime = "in \(minutes) minute\(minutes == 1 ? "" : "s")"
+            } else {
+                relativeTime = "in less than a minute"
+            }
+        } else {
+            // Past date
+            let minutes = Int(-timeInterval / 60)
+            let hours = minutes / 60
+            let days = hours / 24
+            
+            if days > 0 {
+                relativeTime = "\(days) day\(days == 1 ? "" : "s") ago"
+            } else if hours > 0 {
+                relativeTime = "\(hours) hour\(hours == 1 ? "" : "s") ago"
+            } else if minutes > 0 {
+                relativeTime = "\(minutes) minute\(minutes == 1 ? "" : "s") ago"
+            } else {
+                relativeTime = "less than a minute ago"
+            }
+        }
+        
+        // Format absolute time
         let absoluteFormatter = DateFormatter()
         absoluteFormatter.dateStyle = .medium
         absoluteFormatter.timeStyle = .medium
         let absoluteTime = absoluteFormatter.string(from: date)
-
+        
         return "\(relativeTime) (\(absoluteTime))"
     }
 
