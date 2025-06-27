@@ -26,10 +26,12 @@ public struct GenerateRequest: Codable, Sendable {
     public let raw: Bool?
     /// How long to keep model loaded in memory
     public let keepAlive: TimeInterval?
+    /// Whether the model should think before responding (for thinking models)
+    public let think: Bool?
 
     private enum CodingKeys: String, CodingKey {
         case model, prompt, suffix, images, format, options, system
-        case template, context, stream, raw
+        case template, context, stream, raw, think
         case keepAlive = "keep_alive"
     }
 
@@ -45,7 +47,8 @@ public struct GenerateRequest: Codable, Sendable {
         context: [Int]? = nil,
         stream: Bool? = nil,
         raw: Bool? = nil,
-        keepAlive: TimeInterval? = nil
+        keepAlive: TimeInterval? = nil,
+        think: Bool? = nil
     ) {
         self.model = model
         self.prompt = prompt
@@ -59,12 +62,180 @@ public struct GenerateRequest: Codable, Sendable {
         self.stream = stream
         self.raw = raw
         self.keepAlive = keepAlive
+        self.think = think
     }
 }
 
 /// Response format options
-public enum ResponseFormat: String, Codable, Sendable {
+public enum ResponseFormat: Codable, Sendable {
+    /// Basic JSON formatting
     case json
+    /// JSON Schema for structured outputs
+    case jsonSchema(JSONSchema)
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        // Try to decode as string first
+        if let stringValue = try? container.decode(String.self), stringValue == "json" {
+            self = .json
+            return
+        }
+        
+        // Try to decode as JSON Schema
+        if let schema = try? container.decode(JSONSchema.self) {
+            self = .jsonSchema(schema)
+            return
+        }
+        
+        throw DecodingError.dataCorruptedError(in: container, debugDescription: "ResponseFormat must be either 'json' or a JSON Schema object")
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .json:
+            try container.encode("json")
+        case .jsonSchema(let schema):
+            try container.encode(schema)
+        }
+    }
+}
+
+/// JSON Schema definition for structured outputs.
+///
+/// Use this to define the exact structure of the JSON response you want from the model.
+/// The model will be constrained to generate output that matches this schema.
+///
+/// ## Example
+/// ```swift
+/// let schema = JSONSchema(
+///     type: "object",
+///     properties: [
+///         "name": JSONSchemaProperty(type: "string"),
+///         "age": JSONSchemaProperty(type: "integer"),
+///         "skills": JSONSchemaProperty(
+///             type: "array",
+///             items: JSONSchemaProperty(type: "string")
+///         )
+///     ],
+///     required: ["name", "age"]
+/// )
+/// ```
+public struct JSONSchema: Codable, Sendable {
+    public let type: String
+    public let properties: [String: JSONSchemaProperty]?
+    public let required: [String]?
+    public let items: JSONSchemaProperty?
+    public let additionalProperties: JSONSchemaPropertyOrBool?
+    
+    public init(
+        type: String,
+        properties: [String: JSONSchemaProperty]? = nil,
+        required: [String]? = nil,
+        items: JSONSchemaProperty? = nil,
+        additionalProperties: JSONSchemaPropertyOrBool? = nil
+    ) {
+        self.type = type
+        self.properties = properties
+        self.required = required
+        self.items = items
+        self.additionalProperties = additionalProperties
+    }
+}
+
+/// JSON Schema property definition
+public indirect enum JSONSchemaProperty: Codable, Sendable {
+    case simple(type: String, description: String?, enum: [String]?)
+    case array(type: String, items: JSONSchemaProperty, description: String?)
+    case object(type: String, properties: [String: JSONSchemaProperty], required: [String]?, description: String?)
+    
+    public init(
+        type: String,
+        description: String? = nil,
+        enum: [String]? = nil,
+        items: JSONSchemaProperty? = nil,
+        properties: [String: JSONSchemaProperty]? = nil,
+        required: [String]? = nil
+    ) {
+        if let items = items {
+            self = .array(type: type, items: items, description: description)
+        } else if let properties = properties {
+            self = .object(type: type, properties: properties, required: required, description: description)
+        } else {
+            self = .simple(type: type, description: description, enum: `enum`)
+        }
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case type, description, `enum`, items, properties, required
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+        let description = try container.decodeIfPresent(String.self, forKey: .description)
+        
+        if let items = try container.decodeIfPresent(JSONSchemaProperty.self, forKey: .items) {
+            self = .array(type: type, items: items, description: description)
+        } else if let properties = try container.decodeIfPresent([String: JSONSchemaProperty].self, forKey: .properties) {
+            let required = try container.decodeIfPresent([String].self, forKey: .required)
+            self = .object(type: type, properties: properties, required: required, description: description)
+        } else {
+            let enumValues = try container.decodeIfPresent([String].self, forKey: .enum)
+            self = .simple(type: type, description: description, enum: enumValues)
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        switch self {
+        case .simple(let type, let description, let enumValues):
+            try container.encode(type, forKey: .type)
+            try container.encodeIfPresent(description, forKey: .description)
+            try container.encodeIfPresent(enumValues, forKey: .enum)
+            
+        case .array(let type, let items, let description):
+            try container.encode(type, forKey: .type)
+            try container.encodeIfPresent(description, forKey: .description)
+            try container.encode(items, forKey: .items)
+            
+        case .object(let type, let properties, let required, let description):
+            try container.encode(type, forKey: .type)
+            try container.encodeIfPresent(description, forKey: .description)
+            try container.encode(properties, forKey: .properties)
+            try container.encodeIfPresent(required, forKey: .required)
+        }
+    }
+}
+
+
+/// Represents either a JSONSchemaProperty or a boolean
+public enum JSONSchemaPropertyOrBool: Codable, Sendable {
+    case property(JSONSchemaProperty)
+    case bool(Bool)
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let bool = try? container.decode(Bool.self) {
+            self = .bool(bool)
+        } else if let property = try? container.decode(JSONSchemaProperty.self) {
+            self = .property(property)
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected either a boolean or a JSON Schema property")
+        }
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .property(let prop):
+            try container.encode(prop)
+        case .bool(let bool):
+            try container.encode(bool)
+        }
+    }
 }
 
 /// Base model options that can be applied to any request
