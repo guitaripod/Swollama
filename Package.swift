@@ -3,6 +3,22 @@
 
 import PackageDescription
 
+// Performance optimization flags for Linux
+let linuxSwiftSettings: [SwiftSetting] = [
+    .unsafeFlags([
+        "-cross-module-optimization",
+        "-whole-module-optimization",
+        "-Osize"
+    ], .when(platforms: [.linux], configuration: .release)),
+]
+
+let linuxLinkerSettings: [LinkerSetting] = [
+    .unsafeFlags([
+        "-Xlinker", "-z", "-Xlinker", "relro",
+        "-Xlinker", "-z", "-Xlinker", "now"
+    ], .when(platforms: [.linux]))
+]
+
 let package = Package(
     name: "Swollama",
     platforms: [
@@ -19,10 +35,14 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Swollama"),
+            name: "Swollama",
+            swiftSettings: linuxSwiftSettings,
+            linkerSettings: linuxLinkerSettings),
         .executableTarget(
             name: "SwollamaCLI",
-            dependencies: ["Swollama"]),
+            dependencies: ["Swollama"],
+            swiftSettings: linuxSwiftSettings,
+            linkerSettings: linuxLinkerSettings),
         .testTarget(
             name: "SwollamaTests",
             dependencies: ["Swollama"]
