@@ -50,34 +50,44 @@ struct SwollamaCLI {
 
         guard !arguments.isEmpty else {
             printUsage()
-            throw CLIError.missingCommand
+            return
         }
 
         let command = arguments[0]
         let remainingArgs = Array(arguments.dropFirst())
         let client = OllamaClient(baseURL: baseURL)
 
-        switch command.lowercased() {
-        case "list":
-            try await ListModelsCommand(client: client).execute(with: remainingArgs)
-        case "show":
-            try await ShowModelCommand(client: client).execute(with: remainingArgs)
-        case "pull":
-            try await PullModelCommand(client: client).execute(with: remainingArgs)
-        case "copy":
-            try await CopyModelCommand(client: client).execute(with: remainingArgs)
-        case "delete":
-            try await DeleteModelCommand(client: client).execute(with: remainingArgs)
-        case "chat":
-            try await ChatCommand(client: client).execute(with: remainingArgs)
-        case "generate":
-            try await GenerateCommand(client: client).execute(with: remainingArgs)
-        case "ps":
-            try await ListRunningModelsCommand(client: client).execute(with: remainingArgs)
-        case "help":
-            printUsage()
-        default:
-            throw CLIError.invalidCommand(command)
+        do {
+            switch command.lowercased() {
+            case "list":
+                try await ListModelsCommand(client: client).execute(with: remainingArgs)
+            case "show":
+                try await ShowModelCommand(client: client).execute(with: remainingArgs)
+            case "pull":
+                try await PullModelCommand(client: client).execute(with: remainingArgs)
+            case "copy":
+                try await CopyModelCommand(client: client).execute(with: remainingArgs)
+            case "delete":
+                try await DeleteModelCommand(client: client).execute(with: remainingArgs)
+            case "chat":
+                try await ChatCommand(client: client).execute(with: remainingArgs)
+            case "generate":
+                try await GenerateCommand(client: client).execute(with: remainingArgs)
+            case "ps":
+                try await ListRunningModelsCommand(client: client).execute(with: remainingArgs)
+            case "help":
+                printUsage()
+            default:
+                print("Error: Invalid command: \(command)")
+                printUsage()
+                exit(1)
+            }
+        } catch let error as CLIError {
+            print("Error: \(error.errorDescription ?? "Unknown error")")
+            exit(1)
+        } catch {
+            print("Error: \(error.localizedDescription)")
+            exit(1)
         }
     }
 
@@ -109,21 +119,17 @@ struct SwollamaCLI {
           swollama generate codellama
           swollama pull llama2
         
-        Performance Tips (Linux):
-          - Use systemd service for production deployments
-          - Configure /etc/swollama/swollama.conf for settings
-          - Check --system-info for diagnostics
+        Linux Users:
+          - See linux/README.md for deployment guide
+          - Use --system-info for diagnostics
         """)
     }
     
     static func printVersion() {
         print("""
-        Swollama v1.0.0 - High-Performance Ollama Client
-        Optimized for Linux
-        
-        Build: Release (Linux-optimized)
-        Swift: 5.9+
+        Swollama v1.0.0
         Platform: \(getPlatformName())
+        Swift: 5.9+
         """)
     }
     
