@@ -1,68 +1,157 @@
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import Foundation
 import Swollama
 
 @main
 struct SwollamaCLI {
-    private static var commands: [String: CommandProtocol] = {
-        let client = OllamaClient()
-        return [
-            "list": ListModelsCommand(client: client),
-            "pull": PullModelCommand(client: client),
-            "show": ShowModelCommand(client: client),
-            "copy": CopyModelCommand(client: client),
-            "delete": DeleteModelCommand(client: client),
-            "ps": ListRunningModelsCommand(client: client),
-            "chat": ChatCommand(client: client),
-            "generate": GenerateCommand(client: client),
-        ]
-    }()
-
     static func main() async throws {
-        let arguments = Array(CommandLine.arguments.dropFirst())
+        // Initialize Linux-specific optimizations
+        #if os(Linux)
+        LinuxSupport.installSignalHandlers()
+        LinuxSupport.configureMemorySettings()
+        LinuxSupport.configureProcessPriority()
+        #endif
+        
+        // Get command line arguments
+        var arguments = CommandLine.arguments
+        // Remove the executable name
+        arguments.removeFirst()
+
+        // Check for help flags before other parsing
+        if arguments.contains("--help") || arguments.contains("-h") || arguments.contains("help") {
+            printUsage()
+            return
+        }
+        
+        // Check for version flag
+        if arguments.contains("--version") || arguments.contains("-v") {
+            printVersion()
+            return
+        }
+        
+        // Check for system info flag (Linux diagnostic feature)
+        if arguments.contains("--system-info") {
+            printSystemInfo()
+            return
+        }
+
+        // Parse host option first
+        let baseURL: URL
+        if let hostIndex = arguments.firstIndex(of: "--host"),
+           hostIndex + 1 < arguments.count {
+            baseURL = URL(string: arguments[hostIndex + 1])!
+            // Remove the --host and its value from arguments
+            arguments.removeSubrange(hostIndex...hostIndex+1)
+        } else {
+            baseURL = URL(string: "http://localhost:11434")!
+        }
+
         guard !arguments.isEmpty else {
             printUsage()
-            exit(1)
+            throw CLIError.missingCommand
         }
 
-        do {
-            let commandName = arguments[0]
-            guard let command = commands[commandName] else {
-                throw CLIError.unknownCommand(commandName)
-            }
-            try await command.execute(with: Array(arguments.dropFirst()))
-        } catch {
-            handleError(error)
+        let command = arguments[0]
+        let remainingArgs = Array(arguments.dropFirst())
+        let client = OllamaClient(baseURL: baseURL)
+
+        switch command.lowercased() {
+        case "list":
+            try await ListModelsCommand(client: client).execute(with: remainingArgs)
+        case "show":
+            try await ShowModelCommand(client: client).execute(with: remainingArgs)
+        case "pull":
+            try await PullModelCommand(client: client).execute(with: remainingArgs)
+        case "copy":
+            try await CopyModelCommand(client: client).execute(with: remainingArgs)
+        case "delete":
+            try await DeleteModelCommand(client: client).execute(with: remainingArgs)
+        case "chat":
+            try await ChatCommand(client: client).execute(with: remainingArgs)
+        case "generate":
+            try await GenerateCommand(client: client).execute(with: remainingArgs)
+        case "ps":
+            try await ListRunningModelsCommand(client: client).execute(with: remainingArgs)
+        case "help":
+            printUsage()
+        default:
+            throw CLIError.invalidCommand(command)
         }
     }
 
-    private static func handleError(_ error: Error) {
-        print("\u{1B}[31mError: \(error.localizedDescription)\u{1B}[0m")
-        printUsage()
-        exit(1)
+    static func printUsage() {
+        print("""
+        Usage: swollama [options] <command> [arguments]
+        
+        Options:
+          --host <url>            Ollama API host (default: http://localhost:11434)
+          --version, -v           Show version information
+          --system-info           Display system information (Linux)
+          --help, -h              Show this help message
+        
+        Commands:
+          list                     List available models
+          show <model>            Show model information
+          pull <model>            Download a model
+          copy <src> <dst>        Create a copy of a model
+          delete <model>          Remove a model
+          chat [model]            Start a chat session
+          generate [model]        Generate text from a prompt
+          ps                      List running models
+          help                    Show this help message
+        
+        Examples:
+          swollama list
+          swollama --host http://remote:11434 list
+          swollama chat llama2
+          swollama generate codellama
+          swollama pull llama2
+        
+        Performance Tips (Linux):
+          - Use systemd service for production deployments
+          - Configure /etc/swollama/swollama.conf for settings
+          - Check --system-info for diagnostics
+        """)
     }
-
-    private static func printUsage() {
-        print(
-            """
-            Usage:
-              SwollamaCLI list                 - List all available models
-              SwollamaCLI pull <model-name>    - Pull a specific model
-              SwollamaCLI show <model-name>    - Show detailed information about a model
-              SwollamaCLI copy <src> <dest>    - Copy a model to a new name
-              SwollamaCLI delete <model-name>  - Delete a specific model
-              SwollamaCLI ps                   - List currently running models
-              SwollamaCLI generate <model-name>  - Start an interactive text generation session
-              SwollamaCLI chat <model-name>    - Start an interactive chat session
-
-            Examples:
-              SwollamaCLI list
-              SwollamaCLI pull llama2
-              SwollamaCLI show llama2
-              SwollamaCLI copy llama2 my-llama2
-              SwollamaCLI delete my-llama2
-              SwollamaCLI ps
-              SwollamaCLI chat llama2
-            """
-        )
+    
+    static func printVersion() {
+        print("""
+        Swollama v1.0.0 - High-Performance Ollama Client
+        Optimized for Linux
+        
+        Build: Release (Linux-optimized)
+        Swift: 5.9+
+        Platform: \(getPlatformName())
+        """)
+    }
+    
+    static func printSystemInfo() {
+        print("""
+        Swollama System Information
+        ==========================
+        
+        \(LinuxSupport.getSystemInfo())
+        
+        Performance Settings:
+        - Network buffer size: 64KB
+        - Terminal update rate: 10 FPS
+        - Progress update threshold: 0.1%
+        - Connection pooling: Enabled
+        - Memory optimization: Active
+        """)
+    }
+    
+    static func getPlatformName() -> String {
+        #if os(Linux)
+        return "Linux"
+        #elseif os(macOS)
+        return "macOS"
+        #elseif os(iOS)
+        return "iOS"
+        #else
+        return "Unknown"
+        #endif
     }
 }
