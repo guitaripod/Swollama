@@ -76,7 +76,7 @@ struct SwollamaCLI {
             case "delete":
                 try await DeleteModelCommand(client: client).execute(with: remainingArgs)
             case "chat":
-                try await ChatCommand(client: client).execute(with: remainingArgs)
+                try await EnhancedChatCommand(client: client).execute(with: remainingArgs)
             case "generate":
                 try await GenerateCommand(client: client).execute(with: remainingArgs)
             case "embeddings", "embed":
