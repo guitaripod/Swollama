@@ -17,7 +17,7 @@ struct ShowModelCommand: CommandProtocol {
         }
 
         print("Fetching details for model: \(model.fullName)...")
-        let info = try await client.showModel(name: model)
+        let info = try await client.showModel(name: model, verbose: nil)
 
         print("\nModel Details:")
         print("--------------")
