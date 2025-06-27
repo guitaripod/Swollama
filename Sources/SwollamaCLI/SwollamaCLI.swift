@@ -65,6 +65,12 @@ struct SwollamaCLI {
                 try await ShowModelCommand(client: client).execute(with: remainingArgs)
             case "pull":
                 try await PullModelCommand(client: client).execute(with: remainingArgs)
+            case "push":
+                let progressTracker = DefaultProgressTracker()
+                try await PushCommand(client: client, progressTracker: progressTracker).execute(with: remainingArgs)
+            case "create":
+                let progressTracker = DefaultProgressTracker()
+                try await CreateCommand(client: client, progressTracker: progressTracker).execute(with: remainingArgs)
             case "copy":
                 try await CopyModelCommand(client: client).execute(with: remainingArgs)
             case "delete":
@@ -73,8 +79,16 @@ struct SwollamaCLI {
                 try await ChatCommand(client: client).execute(with: remainingArgs)
             case "generate":
                 try await GenerateCommand(client: client).execute(with: remainingArgs)
+            case "embeddings", "embed":
+                try await EmbeddingsCommand(client: client).execute(with: remainingArgs)
             case "ps":
                 try await ListRunningModelsCommand(client: client).execute(with: remainingArgs)
+            case "version":
+                try await VersionCommand(client: client).execute(with: remainingArgs)
+            case "blob":
+                try await BlobCommand(client: client).execute(with: remainingArgs)
+            case "test":
+                try await TestCommand(client: client).execute(with: remainingArgs)
             case "help":
                 printUsage()
             default:
@@ -105,19 +119,29 @@ struct SwollamaCLI {
           list                     List available models
           show <model>            Show model information
           pull <model>            Download a model
+          push <model>            Upload a model to Ollama library
+          create <model>          Create a new model
           copy <src> <dst>        Create a copy of a model
           delete <model>          Remove a model
           chat [model]            Start a chat session
           generate [model]        Generate text from a prompt
+          embeddings <text>       Generate embeddings for text
           ps                      List running models
+          version                 Show Ollama server version
+          blob <subcommand>       Manage blobs (check/push)
+          test [type]             Test new API features
           help                    Show this help message
         
         Examples:
           swollama list
           swollama --host http://remote:11434 list
-          swollama chat llama2
+          swollama chat llama3.2
           swollama generate codellama
-          swollama pull llama2
+          swollama pull llama3.2
+          swollama create mario --from llama3.2 --system "You are Mario"
+          swollama embeddings "Hello world"
+          swollama test structured
+          swollama version
         
         Linux Users:
           - See linux/README.md for deployment guide
