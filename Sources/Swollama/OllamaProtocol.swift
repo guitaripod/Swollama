@@ -3,7 +3,42 @@ import Foundation
 /// A protocol defining the core functionality of an Ollama client.
 ///
 /// This protocol provides a comprehensive interface for interacting with the Ollama API,
-/// including model management, text generation, and embeddings generation.
+/// supporting all endpoints documented at [Ollama API](https://github.com/ollama/ollama/blob/main/docs/api.md).
+///
+/// ## Overview
+///
+/// `OllamaProtocol` defines methods for:
+/// - Model management (list, show, pull, push, copy, delete)
+/// - Text generation with streaming support
+/// - Chat completions with tool calling
+/// - Embeddings generation
+/// - Model creation from Modelfiles, GGUF, or Safetensors
+/// - Blob management for large files
+/// - Server information
+///
+/// ## Topics
+///
+/// ### Model Management
+/// - ``listModels()``
+/// - ``showModel(name:verbose:)``
+/// - ``pullModel(name:options:)``
+/// - ``pushModel(name:options:)``
+/// - ``copyModel(source:destination:)``
+/// - ``deleteModel(name:)``
+/// - ``listRunningModels()``
+///
+/// ### Model Creation
+/// - ``createModel(_:)``
+/// - ``checkBlobExists(digest:)``
+/// - ``pushBlob(digest:data:)``
+///
+/// ### Generation
+/// - ``OllamaClient/generateText(prompt:model:options:)``
+/// - ``OllamaClient/chat(messages:model:options:)``
+/// - ``OllamaClient/generateEmbeddings(input:model:options:)``
+///
+/// ### Server Information
+/// - ``getVersion()``
 public protocol OllamaProtocol: Sendable {
     /// The base URL of the Ollama API server
     var baseURL: URL { get }
@@ -47,10 +82,12 @@ public protocol OllamaProtocol: Sendable {
     /// }
     /// ```
     ///
-    /// - Parameter name: The name of the model to show information for.
+    /// - Parameters:
+    ///   - name: The name of the model to show information for.
+    ///   - verbose: If true, returns full data for verbose response fields.
     /// - Returns: Detailed information about the model.
     /// - Throws: An `OllamaError` if the request fails.
-    func showModel(name: OllamaModelName) async throws -> ModelInformation
+    func showModel(name: OllamaModelName, verbose: Bool?) async throws -> ModelInformation
 
     /// Pulls a model from the Ollama library.
     ///
@@ -176,4 +213,80 @@ public protocol OllamaProtocol: Sendable {
     /// - Returns: An array of running model information.
     /// - Throws: An `OllamaError` if the request fails.
     func listRunningModels() async throws -> [RunningModelInfo]
+    
+    /// Creates a new model from another model, GGUF files, or Safetensors.
+    ///
+    /// Example usage:
+    /// ```swift
+    /// do {
+    ///     let request = CreateModelRequest(
+    ///         model: "mario",
+    ///         from: "llama3.2",
+    ///         system: "You are Mario from Super Mario Bros."
+    ///     )
+    ///     let progress = try await client.createModel(request)
+    ///     for try await update in progress {
+    ///         print("Status: \(update.status)")
+    ///     }
+    /// } catch {
+    ///     print("Error creating model: \(error)")
+    /// }
+    /// ```
+    ///
+    /// - Parameter request: The model creation parameters.
+    /// - Returns: An async sequence of progress updates.
+    /// - Throws: An `OllamaError` if the request fails.
+    func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<OperationProgress, Error>
+    
+    /// Checks if a blob exists on the server.
+    ///
+    /// Example usage:
+    /// ```swift
+    /// do {
+    ///     let exists = try await client.checkBlobExists(digest: "sha256:29fdb92e57cf0827ded04ae6461b5931d01fa595843f55d36f5b275a52087dd2")
+    ///     print("Blob exists: \(exists)")
+    /// } catch {
+    ///     print("Error checking blob: \(error)")
+    /// }
+    /// ```
+    ///
+    /// - Parameter digest: The SHA256 digest of the blob.
+    /// - Returns: True if the blob exists, false otherwise.
+    /// - Throws: An `OllamaError` if the request fails.
+    func checkBlobExists(digest: String) async throws -> Bool
+    
+    /// Pushes a blob to the server.
+    ///
+    /// Example usage:
+    /// ```swift
+    /// do {
+    ///     let fileData = try Data(contentsOf: URL(fileURLWithPath: "model.gguf"))
+    ///     try await client.pushBlob(digest: "sha256:29fdb92e57cf0827ded04ae6461b5931d01fa595843f55d36f5b275a52087dd2", data: fileData)
+    ///     print("Blob pushed successfully")
+    /// } catch {
+    ///     print("Error pushing blob: \(error)")
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - digest: The expected SHA256 digest of the blob.
+    ///   - data: The blob data to push.
+    /// - Throws: An `OllamaError` if the request fails.
+    func pushBlob(digest: String, data: Data) async throws
+    
+    /// Gets the Ollama server version.
+    ///
+    /// Example usage:
+    /// ```swift
+    /// do {
+    ///     let version = try await client.getVersion()
+    ///     print("Ollama version: \(version.version)")
+    /// } catch {
+    ///     print("Error getting version: \(error)")
+    /// }
+    /// ```
+    ///
+    /// - Returns: The server version information.
+    /// - Throws: An `OllamaError` if the request fails.
+    func getVersion() async throws -> VersionResponse
 }

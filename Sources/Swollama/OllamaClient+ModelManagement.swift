@@ -8,8 +8,8 @@ extension OllamaClient {
         return response.models
     }
 
-    public func showModel(name: OllamaModelName) async throws -> ModelInformation {
-        let request = ShowModelRequest(name: name.fullName)
+    public func showModel(name: OllamaModelName, verbose: Bool? = nil) async throws -> ModelInformation {
+        let request = ShowModelRequest(model: name.fullName, verbose: verbose)
         let data = try await makeRequest(
             endpoint: "show",
             method: "POST",
@@ -95,10 +95,46 @@ extension OllamaClient {
         let response = try decode(data, as: RunningModelsResponse.self)
         return response.models
     }
-}
-
-private struct ShowModelRequest: Codable {
-    let name: String
+    
+    public func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<OperationProgress, Error> {
+        return streamRequest(
+            endpoint: "create",
+            method: "POST",
+            body: try encode(request),
+            as: OperationProgress.self
+        )
+    }
+    
+    public func checkBlobExists(digest: String) async throws -> Bool {
+        do {
+            _ = try await makeRequest(
+                endpoint: "blobs/\(digest)",
+                method: "HEAD"
+            )
+            return true
+        } catch {
+            // Check if it's a 404 error
+            if let ollamaError = error as? OllamaError,
+               case .serverError(let message) = ollamaError,
+               message.contains("404") || message.contains("Not Found") {
+                return false
+            }
+            throw error
+        }
+    }
+    
+    public func pushBlob(digest: String, data: Data) async throws {
+        _ = try await makeRequest(
+            endpoint: "blobs/\(digest)",
+            method: "POST",
+            body: data
+        )
+    }
+    
+    public func getVersion() async throws -> VersionResponse {
+        let data = try await makeRequest(endpoint: "version")
+        return try decode(data, as: VersionResponse.self)
+    }
 }
 
 private struct PullModelRequest: Codable {
