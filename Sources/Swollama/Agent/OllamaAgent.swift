@@ -34,7 +34,7 @@ public actor OllamaAgent {
 
                     var iterations = 0
 
-                    while iterations < configuration.maxIterations {
+                    while iterations < self.configuration.maxIterations {
                         iterations += 1
 
                         let response = try await self.client.chat(
@@ -45,27 +45,54 @@ public actor OllamaAgent {
                                     OllamaWebSearchClient.webSearchTool,
                                     OllamaWebSearchClient.webFetchTool
                                 ],
-                                modelOptions: await self.configuration.modelOptions,
-                                think: await self.configuration.enableThinking
+                                modelOptions: self.configuration.modelOptions,
+                                think: self.configuration.enableThinking
                             )
                         )
 
-                        var finalResponse: ChatResponse?
-                        for try await chunk in response {
-                            finalResponse = chunk
+                        var accumulatedContent = ""
+                        var accumulatedThinking: String?
+                        var finalToolCalls: [ToolCall]?
+                        var finalRole: MessageRole = .assistant
+
+                        do {
+                            for try await chunk in response {
+                                if !chunk.message.content.isEmpty {
+                                    accumulatedContent += chunk.message.content
+                                }
+
+                                if let thinking = chunk.message.thinking {
+                                    if accumulatedThinking == nil {
+                                        accumulatedThinking = thinking
+                                    } else {
+                                        accumulatedThinking! += thinking
+                                    }
+                                }
+
+                                if let toolCalls = chunk.message.toolCalls {
+                                    finalToolCalls = toolCalls
+                                }
+
+                                finalRole = chunk.message.role
+                            }
+                        } catch {
+                            throw error
                         }
 
-                        guard let final = finalResponse else {
-                            throw OllamaError.invalidResponse
-                        }
+                        let final = ChatMessage(
+                            role: finalRole,
+                            content: accumulatedContent,
+                            toolCalls: finalToolCalls,
+                            thinking: accumulatedThinking
+                        )
 
-                        if let thinking = final.message.thinking, !thinking.isEmpty {
+                        if let thinking = final.thinking, !thinking.isEmpty {
                             continuation.yield(.thinking(thinking))
                         }
 
-                        messages.append(final.message)
+                        messages.append(final)
 
-                        if let toolCalls = final.message.toolCalls, !toolCalls.isEmpty {
+                        if let toolCalls = final.toolCalls, !toolCalls.isEmpty {
                             for toolCall in toolCalls {
                                 continuation.yield(.toolCall(
                                     name: toolCall.function.name,
@@ -73,7 +100,7 @@ public actor OllamaAgent {
                                 ))
 
                                 let result = try await self.executeToolCall(toolCall)
-                                let truncated = await self.truncateIfNeeded(result)
+                                let truncated = self.truncateIfNeeded(result)
 
                                 continuation.yield(.toolResult(
                                     name: toolCall.function.name,
@@ -86,8 +113,8 @@ public actor OllamaAgent {
                                 ))
                             }
                         } else {
-                            if !final.message.content.isEmpty {
-                                continuation.yield(.message(final.message.content))
+                            if !final.content.isEmpty {
+                                continuation.yield(.message(final.content))
                             }
                             continuation.yield(.done)
                             continuation.finish()
@@ -95,7 +122,7 @@ public actor OllamaAgent {
                         }
                     }
 
-                    throw OllamaError.invalidParameters("Agent reached maximum iterations (\(await self.configuration.maxIterations)) without completion")
+                    throw OllamaError.invalidParameters("Agent reached maximum iterations (\(self.configuration.maxIterations)) without completion")
                 } catch {
                     continuation.finish(throwing: error)
                 }
@@ -130,8 +157,8 @@ public actor OllamaAgent {
         }
     }
 
-    private func truncateIfNeeded(_ content: String) async -> String {
-        guard let maxLength = await configuration.truncateResults else {
+    nonisolated private func truncateIfNeeded(_ content: String) -> String {
+        guard let maxLength = configuration.truncateResults else {
             return content
         }
         if content.count > maxLength {
