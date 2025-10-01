@@ -106,12 +106,8 @@ public actor OllamaAgent {
         prompt: String,
         model: OllamaModelName
     ) -> AsyncThrowingStream<AgentEvent, Error> {
-        AsyncThrowingStream { [weak self] continuation in
+        AsyncThrowingStream { continuation in
             Task {
-                guard let self = self else {
-                    continuation.finish()
-                    return
-                }
 
                 do {
                     var messages: [ChatMessage] = [
