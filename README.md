@@ -22,7 +22,7 @@ A comprehensive, protocol-oriented Swift client for the Ollama API. This package
 
 ## Requirements
 
-- macOS 14+ / Linux
+- macOS 14+ / iOS 17+ / Linux
 - Swift 5.9+
 - [Ollama](https://ollama.ai) installed and running
 
