@@ -5,7 +5,7 @@
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fguitaripod%2FSwollama%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/guitaripod/Swollama)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fguitaripod%2FSwollama%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/guitaripod/Swollama)
 [![Documentation](https://img.shields.io/badge/Documentation-DocC-blue)](https://guitaripod.github.io/Swollama/documentation/swollama/)
-![License](https://img.shields.io/badge/License-MIT-green)
+![License](https://img.shields.io/badge/License-GPL--v3-blue)
 
 A comprehensive, protocol-oriented Swift client for the Ollama API. This package provides a type-safe way to interact with Ollama's machine learning models, supporting all API endpoints with native Swift concurrency.
 
@@ -199,4 +199,4 @@ Contributions are welcome. Please open an issue first to discuss major changes.
 
 ## License
 
-MIT
+GPL-v3
