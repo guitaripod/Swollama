@@ -1,42 +1,31 @@
 # Swollama Feature Documentation
 
-This document covers all features implemented in Swollama, including the latest Ollama API capabilities.
+Complete guide to all features in Swollama, including the latest Ollama API capabilities.
 
-## Table of Contents
+---
 
-1. [New Features](#new-features)
-2. [Structured Outputs](#structured-outputs)
-3. [Thinking Models](#thinking-models)
-4. [Model Creation](#model-creation)
-5. [Blob Management](#blob-management)
-6. [Advanced Generation Options](#advanced-generation-options)
-7. [CLI Commands](#cli-commands)
+## 📋 Quick Navigation
 
-## New Features
+- [Core Features](#-core-features)
+- [API Methods](#-api-methods)
+- [Advanced Features](#-advanced-features)
+- [CLI Commands](#-cli-commands)
+- [Platform Support](#-platform-support)
 
-Swollama now supports ALL features from the Ollama API, including:
+---
 
-- ✅ **Structured Outputs** with JSON Schema
-- ✅ **Thinking Models** (deepseek-r1 support)
-- ✅ **Model Creation** from GGUF/Safetensors
-- ✅ **Blob Management** for large files
-- ✅ **Version Endpoint**
-- ✅ **Enhanced Show Model** with verbose option
-- ✅ **Raw Mode** for direct prompting
-- ✅ **Suffix Parameter** for code completion
-- ✅ **Tool/Function Calling**
-- ✅ **Multimodal Support** (images)
+## ✨ Core Features
 
-## Structured Outputs
+<details>
+<summary><b>Structured Outputs with JSON Schema</b></summary>
 
-Generate responses that conform to a specific JSON schema:
+Generate responses that conform to a specific JSON schema, ensuring type-safe and validated outputs.
 
 ```swift
 import Swollama
 
 let client = OllamaClient()
 
-// Define the schema
 let schema = JSONSchema(
     type: "object",
     properties: [
@@ -51,71 +40,380 @@ let schema = JSONSchema(
     required: ["name", "age", "available"]
 )
 
-// Generate with structured output
-let request = GenerateRequest(
-    model: "llama3.2",
-    prompt: "Tell me about a software developer named Alex",
-    format: .jsonSchema(schema)
-)
-
 let stream = try await client.generateText(
-    prompt: request.prompt,
+    prompt: "Tell me about a software developer named Alex",
     model: OllamaModelName.parse("llama3.2")!,
-    options: GenerationOptions(format: request.format)
+    options: GenerationOptions(format: .jsonSchema(schema))
 )
 
-// The response will be valid JSON matching the schema
+for try await response in stream {
+    print(response.response)
+}
 ```
 
-### CLI Usage
-
+**CLI Usage:**
 ```bash
-# Test structured outputs
-swollama test structured --model llama3.1
-
-# The test command demonstrates structured output generation
+swollama test structured --model llama3.2
 ```
 
-## Thinking Models
+</details>
 
-Support for models that show their reasoning process:
+<details>
+<summary><b>Thinking Models (Reasoning)</b></summary>
+
+Support for models that show their reasoning process before providing an answer.
 
 ```swift
-// Enable thinking mode
-let request = ChatRequest(
-    model: "deepseek-r1",
-    messages: [
-        ChatMessage(role: .user, content: "Solve this step by step: 2+2")
-    ],
-    think: true  // Enable thinking
-)
+let messages = [
+    ChatMessage(role: .user, content: "Solve this step by step: What is 15 * 24?")
+]
 
-let response = try await client.chat(
-    messages: request.messages,
+let stream = try await client.chat(
+    messages: messages,
     model: OllamaModelName.parse("deepseek-r1")!,
     options: ChatOptions(think: true)
 )
 
-// Access the thinking process
-if let thinking = response.message.thinking {
-    print("Model's thinking: \(thinking)")
+for try await response in stream {
+    if let thinking = response.message.thinking {
+        print("Thinking: \(thinking)")
+    }
+    print("Answer: \(response.message.content)")
+
+    if response.done {
+        if let reason = response.doneReason {
+            print("Completed: \(reason)")
+        }
+    }
 }
-print("Final answer: \(response.message.content)")
 ```
 
-### CLI Usage
-
+**CLI Usage:**
 ```bash
-# Test thinking models
 swollama test thinking --model deepseek-r1
 ```
 
-## Model Creation
+</details>
 
-Create custom models from existing ones or import GGUF/Safetensors:
+<details>
+<summary><b>Tool/Function Calling</b></summary>
+
+Enable models to call predefined functions/tools during generation.
 
 ```swift
-// Create from existing model
+let tools = [
+    ToolDefinition(
+        type: "function",
+        function: FunctionDefinition(
+            name: "get_weather",
+            description: "Get current weather for a location",
+            parameters: JSONSchema(
+                type: "object",
+                properties: [
+                    "location": JSONSchemaProperty(
+                        type: "string",
+                        description: "City name"
+                    ),
+                    "unit": JSONSchemaProperty(
+                        type: "string",
+                        enum: ["celsius", "fahrenheit"]
+                    )
+                ],
+                required: ["location"]
+            )
+        )
+    )
+]
+
+let messages = [
+    ChatMessage(role: .user, content: "What's the weather in Paris?")
+]
+
+let stream = try await client.chat(
+    messages: messages,
+    model: OllamaModelName.parse("llama3.2")!,
+    options: ChatOptions(tools: tools)
+)
+
+for try await response in stream {
+    if let toolCalls = response.message.toolCalls {
+        for call in toolCalls {
+            print("Tool: \(call.function.name)")
+            print("Args: \(call.function.arguments)")
+        }
+    }
+}
+```
+
+**CLI Usage:**
+```bash
+swollama test tools --model llama3.2
+```
+
+</details>
+
+<details>
+<summary><b>Multimodal (Images)</b></summary>
+
+Process images alongside text for vision-capable models.
+
+```swift
+let imageData = try Data(contentsOf: imageURL)
+let base64Image = imageData.base64EncodedString()
+
+let messages = [
+    ChatMessage(
+        role: .user,
+        content: "What do you see in this image?",
+        images: [base64Image]
+    )
+]
+
+let stream = try await client.chat(
+    messages: messages,
+    model: OllamaModelName.parse("llava")!
+)
+
+for try await response in stream {
+    print(response.message.content)
+}
+```
+
+**CLI Usage:**
+```bash
+swollama test images --model llava
+```
+
+</details>
+
+<details>
+<summary><b>Code Completion with Suffix</b></summary>
+
+Generate code between a prefix and suffix for intelligent code completion.
+
+```swift
+let stream = try await client.generateText(
+    prompt: "def fibonacci(n):",
+    model: OllamaModelName.parse("codellama")!,
+    options: GenerationOptions(
+        suffix: "\n\n# Example usage\nprint(fibonacci(10))"
+    )
+)
+
+for try await response in stream {
+    print(response.response)
+}
+```
+
+**CLI Usage:**
+```bash
+swollama test suffix --model codellama
+```
+
+</details>
+
+<details>
+<summary><b>Raw Mode (Bypass Templating)</b></summary>
+
+Send prompts directly to the model without applying chat templates.
+
+```swift
+let stream = try await client.generateText(
+    prompt: "[INST] Why is the sky blue? [/INST]",
+    model: OllamaModelName.parse("mistral")!,
+    options: GenerationOptions(raw: true)
+)
+```
+
+</details>
+
+---
+
+## 🔌 API Methods
+
+<details>
+<summary><b>Text Generation</b></summary>
+
+Generate text responses with streaming support.
+
+```swift
+public func generateText(
+    prompt: String,
+    model: OllamaModelName,
+    options: GenerationOptions = .default
+) async throws -> AsyncThrowingStream<GenerateResponse, Error>
+```
+
+**Features:**
+- Streaming responses
+- Context preservation
+- Custom generation parameters
+- JSON mode support
+- Structured outputs
+
+**Example:**
+```swift
+let stream = try await client.generateText(
+    prompt: "Explain quantum computing",
+    model: OllamaModelName.parse("llama3.2")!,
+    options: GenerationOptions(
+        temperature: 0.7,
+        topP: 0.9
+    )
+)
+
+for try await response in stream {
+    print(response.response, terminator: "")
+    if response.done {
+        print("\nDone. Reason: \(response.doneReason ?? "unknown")")
+    }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Chat Completions</b></summary>
+
+Multi-turn conversations with message history.
+
+```swift
+public func chat(
+    messages: [ChatMessage],
+    model: OllamaModelName,
+    options: ChatOptions = .default
+) async throws -> AsyncThrowingStream<ChatResponse, Error>
+```
+
+**Features:**
+- Multi-turn conversations
+- System messages
+- Tool/function calling
+- Image inputs (multimodal)
+- Thinking mode
+
+**Example:**
+```swift
+var messages = [
+    ChatMessage(role: .system, content: "You are a helpful assistant."),
+    ChatMessage(role: .user, content: "Hello!")
+]
+
+let stream = try await client.chat(
+    messages: messages,
+    model: OllamaModelName.parse("llama3.2")!
+)
+
+var fullResponse = ""
+for try await response in stream {
+    fullResponse += response.message.content
+    if response.done {
+        messages.append(ChatMessage(role: .assistant, content: fullResponse))
+    }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Embeddings</b></summary>
+
+Generate vector embeddings for text.
+
+```swift
+public func generateEmbeddings(
+    input: EmbeddingInput,
+    model: OllamaModelName,
+    options: EmbeddingOptions = .default
+) async throws -> EmbeddingResponse
+```
+
+**Example:**
+```swift
+let response = try await client.generateEmbeddings(
+    input: .single("Hello world"),
+    model: OllamaModelName.parse("nomic-embed-text")!
+)
+
+print("Embedding dimensions: \(response.embeddings[0].count)")
+```
+
+**CLI Usage:**
+```bash
+swollama embeddings "Hello world" --model nomic-embed-text
+```
+
+</details>
+
+<details>
+<summary><b>Model Management</b></summary>
+
+**List Models:**
+```swift
+let models = try await client.listModels()
+for model in models {
+    print("\(model.name) - \(model.size) bytes")
+}
+```
+
+**Show Model Info:**
+```swift
+let info = try await client.showModel(
+    name: OllamaModelName.parse("llama3.2")!,
+    verbose: true
+)
+print("Family: \(info.details.family)")
+print("Parameters: \(info.details.parameterSize)")
+```
+
+**Pull Model:**
+```swift
+let progress = try await client.pullModel(
+    name: OllamaModelName.parse("llama3.2")!,
+    options: PullOptions()
+)
+
+for try await update in progress {
+    print("Status: \(update.status) - \(update.completed)/\(update.total)")
+}
+```
+
+**Delete Model:**
+```swift
+try await client.deleteModel(name: OllamaModelName.parse("old-model")!)
+```
+
+**Copy Model:**
+```swift
+try await client.copyModel(
+    source: OllamaModelName.parse("llama3.2")!,
+    destination: OllamaModelName.parse("my-llama")!
+)
+```
+
+**List Running Models:**
+```swift
+let running = try await client.listRunningModels()
+for model in running {
+    print("\(model.name) - \(model.sizeVRAM) bytes VRAM")
+}
+```
+
+</details>
+
+<details>
+<summary><b>Model Creation</b></summary>
+
+Create custom models from existing ones or import GGUF/Safetensors files.
+
+```swift
+public func createModel(
+    _ request: CreateModelRequest
+) async throws -> AsyncThrowingStream<OperationProgress, Error>
+```
+
+**Create from existing model:**
+```swift
 let request = CreateModelRequest(
     model: "mario",
     from: "llama3.2",
@@ -124,207 +422,350 @@ let request = CreateModelRequest(
 )
 
 let progress = try await client.createModel(request)
+for try await update in progress {
+    print(update.status)
+}
+```
 
-// Create from GGUF file
-let ggufRequest = CreateModelRequest(
-    model: "my-model",
-    files: ["model.gguf": "sha256:432f310a77f..."]
-)
-
-// Quantize a model
-let quantizeRequest = CreateModelRequest(
-    model: "llama3.2:quantized",
+**Quantize a model:**
+```swift
+let request = CreateModelRequest(
+    model: "llama3.2:q4",
     from: "llama3.2:fp16",
     quantize: .q4_K_M
 )
 ```
 
-### CLI Usage
-
+**CLI Usage:**
 ```bash
-# Create a custom model
+# Create custom model
 swollama create mario --from llama3.2 --system "You are Mario"
 
-# Quantize a model
+# Quantize model
 swollama create llama3.2:q4 --from llama3.2:fp16 --quantize q4_K_M
 
-# Create with custom temperature
+# Custom temperature
 swollama create assistant --from llama3.2 --temperature 0.7
 ```
 
-## Blob Management
+</details>
 
-Manage large files for model creation:
+<details>
+<summary><b>Blob Management</b></summary>
+
+Manage large binary files for model creation.
 
 ```swift
-// Check if a blob exists
+// Check if blob exists
 let exists = try await client.checkBlobExists(
-    digest: "sha256:29fdb92e57cf..."
+    digest: "sha256:29fdb92e57cf0827ded04ae6461b5931d01fa595843f55d36f5b275a52087dd2"
 )
 
-// Push a blob
-let modelData = try Data(contentsOf: modelURL)
+// Push blob
+let data = try Data(contentsOf: fileURL)
 try await client.pushBlob(
-    digest: "sha256:29fdb92e57cf...",
-    data: modelData
+    digest: "sha256:29fdb92e57cf0827ded04ae6461b5931d01fa595843f55d36f5b275a52087dd2",
+    data: data
 )
 ```
 
-### CLI Usage
-
+**CLI Usage:**
 ```bash
-# Check if a blob exists
-swollama blob check sha256:29fdb92e57cf0827ded04ae6461b5931d01fa595843f55d36f5b275a52087dd2
+# Check blob
+swollama blob check sha256:29fdb92e57cf...
 
-# Push a blob
-swollama blob push sha256:29fdb92e57cf0827ded04ae6461b5931d01fa595843f55d36f5b275a52087dd2 model.gguf
+# Push blob
+swollama blob push sha256:29fdb92e57cf... model.gguf
 ```
 
-## Advanced Generation Options
+</details>
 
-### Suffix Parameter (Code Completion)
+<details>
+<summary><b>Version Check</b></summary>
+
+Get Ollama server version.
 
 ```swift
-let request = GenerateRequest(
-    model: "codellama",
-    prompt: "def fibonacci(n):",
-    suffix: "\n\n# Example usage\nprint(fibonacci(10))"
+let version = try await client.getVersion()
+print("Ollama version: \(version.version)")
+```
+
+**CLI Usage:**
+```bash
+swollama version
+```
+
+</details>
+
+---
+
+## 🚀 Advanced Features
+
+<details>
+<summary><b>Custom Generation Parameters</b></summary>
+
+Fine-tune generation behavior with advanced options.
+
+```swift
+let options = GenerationOptions(
+    temperature: 0.8,
+    topK: 40,
+    topP: 0.9,
+    repeatPenalty: 1.1,
+    seed: 42,
+    numPredict: 100,
+    stop: ["</s>", "\n\n"]
+)
+
+let stream = try await client.generateText(
+    prompt: "Write a story",
+    model: model,
+    options: options
 )
 ```
 
-### Raw Mode
+**Available parameters:**
+- `temperature`: Creativity level (0.0 - 2.0)
+- `topK`: Token sampling limit
+- `topP`: Nucleus sampling threshold
+- `topA`: Alternative sampling method
+- `minP`: Minimum probability threshold
+- `repeatPenalty`: Penalize repetition
+- `presencePenalty`: Penalize token presence
+- `frequencyPenalty`: Penalize token frequency
+- `mirostat`: Mirostat sampling mode
+- `seed`: Deterministic generation
+- `numPredict`: Max tokens to generate
+- `stop`: Stop sequences
+
+</details>
+
+<details>
+<summary><b>Context Preservation</b></summary>
+
+Preserve context across generation calls for continuation.
 
 ```swift
-let request = GenerateRequest(
-    model: "mistral",
-    prompt: "[INST] Why is the sky blue? [/INST]",
-    raw: true  // Bypass templating
+let stream = try await client.generateText(
+    prompt: "Once upon a time",
+    model: model
+)
+
+var context: [Int]?
+for try await response in stream {
+    if response.done {
+        context = response.context
+    }
+}
+
+// Continue with preserved context
+let continuation = try await client.generateText(
+    prompt: "The story continues",
+    model: model,
+    options: GenerationOptions(context: context)
 )
 ```
 
-### JSON Mode
+</details>
+
+<details>
+<summary><b>Keep-Alive Configuration</b></summary>
+
+Control how long models stay loaded in memory.
 
 ```swift
-let request = GenerateRequest(
-    model: "llama3.2",
-    prompt: "List colors as JSON",
-    format: .json  // Basic JSON formatting
+let client = OllamaClient(
+    configuration: OllamaConfiguration(
+        defaultKeepAlive: 300  // 5 minutes
+    )
 )
+
+// Per-request keep-alive
+let options = GenerationOptions(keepAlive: 600)  // 10 minutes
 ```
 
-## CLI Commands
+</details>
 
-### Complete Command Reference
+<details>
+<summary><b>Error Handling</b></summary>
+
+Comprehensive error handling with typed errors.
+
+```swift
+do {
+    let stream = try await client.generateText(prompt: "Hello", model: model)
+    for try await response in stream {
+        print(response.response)
+    }
+} catch OllamaError.modelNotFound {
+    print("Model not found")
+} catch OllamaError.serverError(let message) {
+    print("Server error: \(message)")
+} catch OllamaError.networkError(let error) {
+    print("Network error: \(error)")
+} catch OllamaError.decodingError(let error) {
+    print("Failed to decode: \(error)")
+} catch {
+    print("Unexpected error: \(error)")
+}
+```
+
+**Error types:**
+- `invalidResponse`: Invalid server response
+- `decodingError`: JSON decoding failed
+- `serverError`: Server returned error (5xx)
+- `modelNotFound`: Model doesn't exist (404)
+- `cancelled`: Request cancelled
+- `networkError`: Network failure
+- `unexpectedStatusCode`: Unexpected HTTP status
+- `invalidParameters`: Invalid request parameters
+- `fileError`: File operation failed
+
+</details>
+
+---
+
+## 🖥️ CLI Commands
+
+<details>
+<summary><b>Complete Command Reference</b></summary>
 
 ```bash
 # Model Management
 swollama list                          # List available models
-swollama show llama3.2                 # Show model info
-swollama show llama3.2 --verbose       # Show verbose model info
-swollama pull llama3.2                 # Download a model
-swollama push myuser/model:latest     # Upload a model
-swollama copy llama3.2 mycopy         # Copy a model
-swollama delete oldmodel               # Delete a model
+swollama show <model>                  # Show model information
+swollama show <model> --verbose        # Show detailed model info
+swollama pull <model>                  # Download a model
+swollama push <model>                  # Upload a model to registry
+swollama copy <source> <dest>          # Copy a model
+swollama delete <model>                # Delete a model
 swollama ps                            # List running models
 
 # Model Creation
-swollama create mymodel --from llama3.2 --system "Custom prompt"
-swollama create mymodel --from llama3.2 --quantize q4_K_M
+swollama create <name> --from <model> --system "prompt"
+swollama create <name> --from <model> --quantize q4_K_M
+swollama create <name> --from <model> --temperature 0.7
 
 # Generation
-swollama generate llama3.2             # Generate text
-swollama chat llama3.2                 # Interactive chat
-swollama embeddings "Hello world"      # Generate embeddings
+swollama generate <model>              # Interactive text generation
+swollama chat <model>                  # Interactive chat session
+swollama embeddings <text>             # Generate embeddings
 
-# Testing & Utilities
+# Testing & Features
 swollama test                          # Run all feature tests
-swollama test structured               # Test structured outputs
-swollama test thinking                 # Test thinking models
-swollama version                       # Show server version
+swollama test structured               # Test JSON Schema outputs
+swollama test thinking                 # Test reasoning models
+swollama test tools                    # Test function calling
+swollama test images                   # Test image inputs
+swollama test suffix                   # Test code completion
+swollama test json                     # Test JSON mode
 
-# Blob Management
-swollama blob check sha256:...         # Check blob exists
-swollama blob push sha256:... file    # Push blob
+# Utilities
+swollama version                       # Server version
+swollama blob check <digest>           # Check if blob exists
+swollama blob push <digest> <file>     # Upload blob
+
+# Options
+--host <url>                           # Custom Ollama server URL
+--help, -h                             # Show help
+--version, -v                          # Show CLI version
 ```
 
-### Test Command
+</details>
 
-The `test` command demonstrates all new features:
+<details>
+<summary><b>Interactive Chat</b></summary>
+
+Start an interactive chat session with various commands.
 
 ```bash
-# Run all tests
-swollama test
-
-# Test specific features
-swollama test structured    # JSON Schema outputs
-swollama test thinking      # Thinking models
-swollama test json          # JSON mode
-swollama test images        # Multimodal
-swollama test tools         # Function calling
-swollama test suffix        # Code completion
+swollama chat llama3.2
 ```
 
-## API Compatibility
+**In-chat commands:**
+- `/exit`, `/quit` - End conversation
+- `/clear` - Clear conversation history
+- `/save [filename]` - Save conversation to file
+- `/load [filename]` - Load conversation from file
+- `/system <message>` - Set system message
+- `/model <name>` - Switch model
+- `/retry` - Retry last message
+- `/undo` - Remove last exchange
+- `/tokens` - Toggle token count display
+- `/help` - Show available commands
 
-Swollama implements the complete Ollama API as documented at:
-https://github.com/ollama/ollama/blob/main/docs/api.md
+</details>
 
-All endpoints are supported:
-- `/api/generate` - Text generation
-- `/api/chat` - Chat completions
-- `/api/embed` - Embeddings (new endpoint)
-- `/api/embeddings` - Legacy embeddings
-- `/api/create` - Model creation
-- `/api/tags` - List models
-- `/api/show` - Show model info
-- `/api/copy` - Copy model
-- `/api/delete` - Delete model
-- `/api/pull` - Pull model
-- `/api/push` - Push model
-- `/api/ps` - List running models
-- `/api/blobs/:digest` - Blob management
-- `/api/version` - Server version
+---
 
-## Swift Package Usage
+## 🌐 Platform Support
 
-```swift
-import Swollama
+<details>
+<summary><b>Supported Platforms</b></summary>
 
-// Initialize client
-let client = OllamaClient(baseURL: URL(string: "http://localhost:11434")!)
+- ✅ **macOS 14+** - Full native support with URLSession
+- ✅ **Linux** - Optimized with curl subprocess for streaming
+- ✅ **iOS 17+** - Full support for mobile apps
+- ✅ **Docker** - Container-ready deployment
 
-// Use structured outputs
-let schema = JSONSchema(type: "object", properties: [...])
-let response = try await client.generateText(
-    prompt: "Generate data",
-    model: model,
-    options: GenerationOptions(format: .jsonSchema(schema))
-)
+**Platform-specific optimizations:**
+- macOS/iOS: Native `URLSession.bytes(for:)` streaming
+- Linux: `curl` subprocess for efficient HTTP streaming
+- All platforms: Actor-based thread safety
+- Zero external dependencies
 
-// Use thinking models
-let chatResponse = try await client.chat(
-    messages: messages,
-    model: model,
-    options: ChatOptions(think: true)
-)
+</details>
 
-// Create models
-let progress = try await client.createModel(
-    CreateModelRequest(model: "custom", from: "llama3.2")
-)
-```
+<details>
+<summary><b>Performance Features</b></summary>
 
-## Platform Support
+- **Zero dependencies**: Pure Swift + Foundation
+- **Efficient streaming**: 64KB buffer size
+- **Connection pooling**: Automatic connection reuse
+- **Retry logic**: Exponential backoff for transient failures
+- **Resource limits**: Configurable timeouts and retries
+- **Linux optimizations**: Custom compiler flags for performance
 
-- ✅ macOS 14+
-- ✅ iOS 17+
-- ✅ Linux (Ubuntu, Arch, Debian, etc.)
-- ✅ Docker
+</details>
 
-## Performance
+---
 
-- Zero dependencies
-- Optimized for Linux with specific compiler flags
-- Efficient streaming with buffered I/O
-- Connection pooling
-- Automatic retry with exponential backoff
+## 📚 API Endpoint Coverage
+
+All Ollama API endpoints are fully supported:
+
+| Endpoint | Method | Description | Status |
+|----------|--------|-------------|--------|
+| `/api/generate` | POST | Text generation | ✅ |
+| `/api/chat` | POST | Chat completions | ✅ |
+| `/api/embed` | POST | Generate embeddings | ✅ |
+| `/api/create` | POST | Create model | ✅ |
+| `/api/tags` | GET | List models | ✅ |
+| `/api/show` | POST | Show model info | ✅ |
+| `/api/copy` | POST | Copy model | ✅ |
+| `/api/delete` | DELETE | Delete model | ✅ |
+| `/api/pull` | POST | Pull model | ✅ |
+| `/api/push` | POST | Push model | ✅ |
+| `/api/ps` | GET | Running models | ✅ |
+| `/api/blobs/:digest` | HEAD | Check blob | ✅ |
+| `/api/blobs/:digest` | POST | Push blob | ✅ |
+| `/api/version` | GET | Server version | ✅ |
+
+---
+
+## 🔗 Additional Resources
+
+- **Official API Documentation**: https://github.com/ollama/ollama/blob/main/docs/api.md
+- **Package Documentation**: https://marcusziade.github.io/Swollama/documentation/swollama/
+- **GitHub Repository**: https://github.com/marcusziade/Swollama
+- **Swift Package Index**: https://swiftpackageindex.com/marcusziade/Swollama
+
+---
+
+## 📝 Notes
+
+- All code examples use the latest API with proper error handling
+- The `done_reason` field is available in both `ChatResponse` and `GenerateResponse`
+- Models are parsed using `OllamaModelName.parse()` which supports `[namespace/]name[:tag]` format
+- Thread safety is guaranteed through Swift actors
+- All streaming operations return `AsyncThrowingStream<T, Error>`
