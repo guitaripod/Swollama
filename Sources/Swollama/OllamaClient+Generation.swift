@@ -200,7 +200,7 @@ extension OllamaClient {
         )
 
         let data = try await makeRequest(
-            endpoint: "embeddings",
+            endpoint: "embed",
             method: "POST",
             body: try encode(request)
         )
