@@ -132,7 +132,24 @@ public actor OllamaClient: OllamaProtocol {
                     }
 
                     guard (200...299).contains(httpResponse.statusCode) else {
-                        throw OllamaError.unexpectedStatusCode(httpResponse.statusCode)
+                        var errorBody = Data()
+                        for try await chunk in dataStream {
+                            errorBody.append(chunk)
+                            if errorBody.count > 4096 { break }
+                        }
+
+                        let errorMessage = String(data: errorBody, encoding: .utf8) ?? "Unknown error"
+
+                        switch httpResponse.statusCode {
+                        case 404:
+                            throw OllamaError.modelNotFound
+                        case 400:
+                            throw OllamaError.invalidParameters(errorMessage)
+                        case 500...599:
+                            throw OllamaError.serverError(errorMessage)
+                        default:
+                            throw OllamaError.unexpectedStatusCode(httpResponse.statusCode)
+                        }
                     }
 
                     var buffer = Data()
