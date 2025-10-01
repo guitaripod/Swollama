@@ -78,11 +78,25 @@ public actor OllamaClient: OllamaProtocol {
                 }
             } catch {
                 lastError = error
-                if attempt < configuration.maxRetries {
+
+                let shouldRetry: Bool
+                if let ollamaError = error as? OllamaError {
+                    switch ollamaError {
+                    case .serverError, .networkError:
+                        shouldRetry = true
+                    default:
+                        shouldRetry = false
+                    }
+                } else {
+                    shouldRetry = true
+                }
+
+                if shouldRetry && attempt < configuration.maxRetries {
                     try await Task.sleep(for: .seconds(configuration.retryDelay))
                     continue
                 }
-                throw OllamaError.networkError(error)
+
+                throw error
             }
         }
 
