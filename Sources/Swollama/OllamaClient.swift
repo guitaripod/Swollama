@@ -131,8 +131,12 @@ public actor OllamaClient: OllamaProtocol {
                         while let newlineIndex = buffer.firstIndex(of: newline) {
                             let lineData = buffer[..<newlineIndex]
                             if !lineData.isEmpty {
-                                if let decoded = try? decoder.decode(T.self, from: lineData) {
+                                do {
+                                    let decoded = try decoder.decode(T.self, from: lineData)
                                     continuation.yield(decoded)
+                                } catch {
+                                    continuation.finish(throwing: OllamaError.decodingError(error))
+                                    return
                                 }
                             }
 
@@ -142,8 +146,12 @@ public actor OllamaClient: OllamaProtocol {
 
 
                     if !buffer.isEmpty {
-                        if let decoded = try? decoder.decode(T.self, from: buffer) {
+                        do {
+                            let decoded = try decoder.decode(T.self, from: buffer)
                             continuation.yield(decoded)
+                        } catch {
+                            continuation.finish(throwing: OllamaError.decodingError(error))
+                            return
                         }
                     }
 
