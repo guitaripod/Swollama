@@ -1,12 +1,12 @@
 import Foundation
 import Swollama
 
-// Enhanced CLI with better error handling and user experience
+
 struct EnhancedSwollamaCLI {
     static let version = "2.0.0"
     static let defaultHost = "http://localhost:11434"
-    
-    // Enhanced error types with more context
+
+
     enum CLIError: LocalizedError {
         case missingCommand
         case unknownCommand(String)
@@ -14,7 +14,7 @@ struct EnhancedSwollamaCLI {
         case invalidArgument(String)
         case connectionFailed(String)
         case configurationError(String)
-        
+
         var errorDescription: String? {
             switch self {
             case .missingCommand:
@@ -32,20 +32,20 @@ struct EnhancedSwollamaCLI {
             }
         }
     }
-    
-    // Configuration management
+
+
     struct Configuration {
         let host: String
         let timeout: TimeInterval
         let retryAttempts: Int
         let verbose: Bool
-        
+
         static func load(from arguments: [String]) -> Configuration {
             var host = ProcessInfo.processInfo.environment["OLLAMA_HOST"] ?? defaultHost
             var timeout: TimeInterval = 120
             var retryAttempts = 3
             var verbose = false
-            
+
             var i = 0
             while i < arguments.count {
                 switch arguments[i] {
@@ -71,7 +71,7 @@ struct EnhancedSwollamaCLI {
                 }
                 i += 1
             }
-            
+
             return Configuration(
                 host: host,
                 timeout: timeout,
@@ -80,9 +80,9 @@ struct EnhancedSwollamaCLI {
             )
         }
     }
-    
-    // MARK: - Command Registry
-    
+
+
+
     static func createCommand(_ name: String, client: OllamaProtocol) -> CommandProtocol? {
         switch name.lowercased() {
         case "chat", "c":
@@ -109,17 +109,17 @@ struct EnhancedSwollamaCLI {
             return nil
         }
     }
-    
-    // MARK: - Help System
-    
+
+
+
     static func printHelp() {
         print("""
         \(EnhancedTerminalStyle.neonBlue)Swollama CLI v\(version)\(EnhancedTerminalStyle.reset)
         A powerful command-line interface for Ollama
-        
+
         \(EnhancedTerminalStyle.neonGreen)USAGE:\(EnhancedTerminalStyle.reset)
             swollama [OPTIONS] <COMMAND> [ARGS]
-        
+
         \(EnhancedTerminalStyle.neonGreen)COMMANDS:\(EnhancedTerminalStyle.reset)
             \(EnhancedTerminalStyle.neonYellow)chat, c\(EnhancedTerminalStyle.reset)      <model>    Start an interactive chat session
             \(EnhancedTerminalStyle.neonYellow)list, ls, l\(EnhancedTerminalStyle.reset)              List available models
@@ -130,7 +130,7 @@ struct EnhancedSwollamaCLI {
             \(EnhancedTerminalStyle.neonYellow)show, info\(EnhancedTerminalStyle.reset)   <model>    Show model information
             \(EnhancedTerminalStyle.neonYellow)blob, b\(EnhancedTerminalStyle.reset)      <command>  Manage blobs
             \(EnhancedTerminalStyle.neonYellow)test, t\(EnhancedTerminalStyle.reset)                 Run tests
-        
+
         \(EnhancedTerminalStyle.neonGreen)GLOBAL OPTIONS:\(EnhancedTerminalStyle.reset)
             \(EnhancedTerminalStyle.neonYellow)--host, -h\(EnhancedTerminalStyle.reset)   <url>      Ollama host (default: \(defaultHost))
             \(EnhancedTerminalStyle.neonYellow)--timeout, -t\(EnhancedTerminalStyle.reset) <seconds>  Request timeout (default: 120)
@@ -138,17 +138,17 @@ struct EnhancedSwollamaCLI {
             \(EnhancedTerminalStyle.neonYellow)--verbose, -v\(EnhancedTerminalStyle.reset)            Enable verbose output
             \(EnhancedTerminalStyle.neonYellow)--help\(EnhancedTerminalStyle.reset)                   Show this help
             \(EnhancedTerminalStyle.neonYellow)--version\(EnhancedTerminalStyle.reset)                Show version
-        
+
         \(EnhancedTerminalStyle.neonGreen)ENVIRONMENT:\(EnhancedTerminalStyle.reset)
             OLLAMA_HOST              Set default Ollama host
-        
+
         \(EnhancedTerminalStyle.neonGreen)EXAMPLES:\(EnhancedTerminalStyle.reset)
             swollama chat llama2
             swollama chat codellama --no-timestamps
             swollama list
             swollama pull mistral
-            swollama --host http://remote:11434 chat llama2
-        
+            swollama --host http://remote:11434 chat
+
         \(EnhancedTerminalStyle.neonGreen)CHAT COMMANDS:\(EnhancedTerminalStyle.reset)
             /help         Show available commands
             /exit         End conversation
@@ -156,18 +156,18 @@ struct EnhancedSwollamaCLI {
             /load [file]  Load conversation
             /retry        Retry last message
             /model <name> Switch model
-        
-        For more information, visit: https://github.com/yourusername/swollama
+
+        For more information, visit: https:
         """)
     }
-    
+
     static func printVersion() {
         print("Swollama CLI v\(version)")
         print("Built with Swift and ❤️")
     }
-    
-    // MARK: - Connection Testing
-    
+
+
+
     static func testConnection(client: OllamaClient) async -> Bool {
         do {
             _ = try await client.listModels()
@@ -176,40 +176,40 @@ struct EnhancedSwollamaCLI {
             return false
         }
     }
-    
-    // MARK: - Main Entry Point
-    
+
+
+
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
-        
-        // Handle help and version flags
+
+
         if arguments.isEmpty || arguments.contains("--help") || arguments.contains("-h") {
             printHelp()
             return
         }
-        
+
         if arguments.contains("--version") || arguments.contains("-v") {
             printVersion()
             return
         }
-        
-        // Parse configuration
+
+
         let config = Configuration.load(from: arguments)
-        
-        // Create client with configuration
+
+
         let ollamaConfig = OllamaConfiguration(
             timeoutInterval: config.timeout,
             maxRetries: config.retryAttempts,
             retryDelay: 1.0
         )
-        
+
         let client = OllamaClient(baseURL: URL(string: config.host)!, configuration: ollamaConfig)
-        
-        // Find command in arguments
+
+
         var commandName: String?
         var commandArgs: [String] = []
         var foundCommand = false
-        
+
         for arg in arguments {
             if !foundCommand && !arg.starts(with: "-") {
                 commandName = arg
@@ -218,18 +218,18 @@ struct EnhancedSwollamaCLI {
                 commandArgs.append(arg)
             }
         }
-        
+
         guard let commandName = commandName else {
             print("\(EnhancedTerminalStyle.red)Error: No command specified\(EnhancedTerminalStyle.reset)")
             print("Use 'swollama --help' for usage information")
             exit(1)
         }
-        
-        // Test connection before executing command
+
+
         if config.verbose {
             print("\(EnhancedTerminalStyle.dim)Connecting to Ollama at \(config.host)...\(EnhancedTerminalStyle.reset)")
         }
-        
+
         let isConnected = await testConnection(client: client)
         if !isConnected {
             print("\(EnhancedTerminalStyle.red)Error: Cannot connect to Ollama at \(config.host)\(EnhancedTerminalStyle.reset)")
@@ -239,22 +239,22 @@ struct EnhancedSwollamaCLI {
             print("  • Try setting OLLAMA_HOST environment variable")
             exit(1)
         }
-        
-        // Create and execute command
+
+
         guard let command = createCommand(commandName, client: client) else {
             print("\(EnhancedTerminalStyle.red)Error: Unknown command '\(commandName)'\(EnhancedTerminalStyle.reset)")
             print("Use 'swollama --help' for available commands")
             exit(1)
         }
-        
+
         do {
-            // Set up signal handlers for graceful shutdown
+
             setupSignalHandlers()
-            
-            // Execute command
+
+
             try await command.execute(with: commandArgs)
-            
-            // Clean exit
+
+
             cleanup()
         } catch let error as CLIError {
             print("\(EnhancedTerminalStyle.red)Error: \(error.localizedDescription)\(EnhancedTerminalStyle.reset)")
@@ -268,25 +268,25 @@ struct EnhancedSwollamaCLI {
             exit(1)
         }
     }
-    
-    // MARK: - Signal Handling
-    
+
+
+
     static func setupSignalHandlers() {
         #if os(Linux)
-        // Ignore SIGPIPE to prevent crashes on broken connections
+
         signal(SIGPIPE, SIG_IGN)
-        // Note: For proper signal handling with cleanup, we should use
-        // sigaction or other mechanisms that don't require capturing context
+
+
         #endif
     }
-    
+
     static func cleanup() {
-        // Reset terminal colors
+
         print(EnhancedTerminalStyle.reset, terminator: "")
-        
-        // Show cursor if it was hidden
+
+
         print("\u{001B}[?25h", terminator: "")
-        
+
         fflush(stdout)
     }
 }

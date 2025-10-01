@@ -1,22 +1,22 @@
 import Foundation
 
-/// Parameters for chat completion requests.
+
 public struct ChatRequest: Codable, Sendable {
-    /// The model to use for chat
+
     public let model: String
-    /// The messages in the conversation
+
     public let messages: [ChatMessage]
-    /// Available tools for the model to use
+
     public let tools: [ToolDefinition]?
-    /// The format to return the response in
+
     public let format: ResponseFormat?
-    /// Additional model parameters
+
     public let options: ModelOptions?
-    /// Whether to stream the response
+
     public let stream: Bool?
-    /// How long to keep model loaded in memory
+
     public let keepAlive: TimeInterval?
-    /// Whether the model should think before responding (for thinking models)
+
     public let think: Bool?
 
     private enum CodingKeys: String, CodingKey {
@@ -45,18 +45,18 @@ public struct ChatRequest: Codable, Sendable {
     }
 }
 
-/// A message in a chat conversation
+
 public struct ChatMessage: Codable, Sendable {
-    /// The role of the message sender
+
     public let role: MessageRole
-    /// The content of the message
+
     public let content: String
-    /// Optional images for multimodal models
-    /// Each string should be a base64-encoded image
+
+
     public let images: [String]?
-    /// Tool calls made by the assistant
+
     public let toolCalls: [ToolCall]?
-    /// The model's thinking process (for thinking models)
+
     public let thinking: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -79,7 +79,7 @@ public struct ChatMessage: Codable, Sendable {
     }
 }
 
-/// Available message roles
+
 public enum MessageRole: String, Codable, Sendable {
     case system
     case user

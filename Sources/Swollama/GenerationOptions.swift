@@ -1,6 +1,6 @@
 import Foundation
 
-/// Options for text generation
+
 public struct GenerationOptions {
     public let suffix: String?
     public let images: [String]?

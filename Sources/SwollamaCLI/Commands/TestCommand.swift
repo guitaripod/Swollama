@@ -1,18 +1,18 @@
 import Foundation
 import Swollama
 
-/// Command to test new API features
+
 struct TestCommand: CommandProtocol {
     private let client: OllamaProtocol
-    
+
     init(client: OllamaProtocol) {
         self.client = client
     }
-    
+
     func execute(with arguments: [String]) async throws {
         var testType = "all"
         var modelName = "llama3.2"
-        
+
         var i = 0
         while i < arguments.count {
             switch arguments[i] {
@@ -22,18 +22,18 @@ struct TestCommand: CommandProtocol {
                     throw CLIError.missingArgument("--model requires a model name")
                 }
                 modelName = arguments[i]
-                
+
             case "--test", "-t":
                 i += 1
                 guard i < arguments.count else {
                     throw CLIError.missingArgument("--test requires a test type")
                 }
                 testType = arguments[i]
-                
+
             case "--help", "-h":
                 printTestHelp()
                 return
-                
+
             default:
                 if i == 0 && !arguments[i].starts(with: "-") {
                     testType = arguments[i]
@@ -41,11 +41,11 @@ struct TestCommand: CommandProtocol {
             }
             i += 1
         }
-        
+
         guard let model = OllamaModelName.parse(modelName) else {
             throw CLIError.invalidArgument("Invalid model name format")
         }
-        
+
         switch testType {
         case "structured":
             try await testStructuredOutput(model: model)
@@ -70,11 +70,11 @@ struct TestCommand: CommandProtocol {
             throw CLIError.invalidArgument("Unknown test type: \(testType)")
         }
     }
-    
+
     private func testStructuredOutput(model: OllamaModelName) async throws {
         print("🧪 Testing Structured Output with JSON Schema")
         print("Model: \(model.fullName)\n")
-        
+
         let schema = JSONSchema(
             type: "object",
             properties: [
@@ -88,23 +88,23 @@ struct TestCommand: CommandProtocol {
             ],
             required: ["name", "age", "available"]
         )
-        
+
         let request = GenerateRequest(
             model: model.fullName,
             prompt: "Tell me about a fictional software developer named Alex who is 28 years old. Include their availability and skills. Respond using JSON.",
             format: .jsonSchema(schema),
             stream: false
         )
-        
+
         print("Prompt: \(request.prompt)")
         print("\nGenerating structured response...\n")
-        
+
         do {
             let response = try await generateSingle(request)
             print("Response:")
             print(response.response)
-            
-            // Try to parse the JSON to verify it's valid
+
+
             if let data = response.response.data(using: .utf8),
                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 print("\n✅ Valid JSON with keys: \(json.keys.sorted())")
@@ -113,27 +113,27 @@ struct TestCommand: CommandProtocol {
             print("❌ Error: \(error)")
         }
     }
-    
+
     private func testJSONMode(model: OllamaModelName) async throws {
         print("🧪 Testing JSON Mode")
         print("Model: \(model.fullName)\n")
-        
+
         let request = GenerateRequest(
             model: model.fullName,
             prompt: "What are the primary colors? List them in a JSON object with a 'colors' array. Respond using JSON.",
             format: .json,
             stream: false
         )
-        
+
         print("Prompt: \(request.prompt)")
         print("\nGenerating JSON response...\n")
-        
+
         do {
             let response = try await generateSingle(request)
             print("Response:")
             print(response.response)
-            
-            // Verify it's valid JSON
+
+
             if let data = response.response.data(using: .utf8),
                let _ = try? JSONSerialization.jsonObject(with: data) {
                 print("\n✅ Valid JSON response")
@@ -144,50 +144,50 @@ struct TestCommand: CommandProtocol {
             print("❌ Error: \(error)")
         }
     }
-    
+
     private func testThinkingModel(model: OllamaModelName) async throws {
         print("🧪 Testing Thinking Model Support")
         print("Model: \(model.fullName)\n")
         print("Note: This requires a thinking-capable model like deepseek-r1\n")
-        
+
         let messages = [
             ChatMessage(role: .user, content: "Can you solve this step by step: If a train travels 120 miles in 2 hours, how far will it travel in 5 hours at the same speed?")
         ]
-        
+
         let request = ChatRequest(
             model: model.fullName,
             messages: messages,
             stream: false,
-            think: true  // Enable thinking
+            think: true
         )
-        
+
         print("Enabling thinking mode...")
         print("User: \(messages[0].content)\n")
-        
+
         do {
             let response = try await chatSingle(request)
-            
+
             if let thinking = response.message.thinking {
                 print("💭 Model's Thinking Process:")
                 print(thinking)
                 print("\n" + String(repeating: "-", count: 40) + "\n")
             }
-            
+
             print("💬 Model's Response:")
             print(response.message.content)
         } catch {
             print("❌ Error: \(error)")
         }
     }
-    
+
     private func testImageInput(model: OllamaModelName) async throws {
         print("🧪 Testing Image Input (Multimodal)")
         print("Model: \(model.fullName)\n")
         print("Note: This requires a multimodal model like llava\n")
-        
-        // This is a small test image (1x1 red pixel)
+
+
         let testImageBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        
+
         let messages = [
             ChatMessage(
                 role: .user,
@@ -195,15 +195,15 @@ struct TestCommand: CommandProtocol {
                 images: [testImageBase64]
             )
         ]
-        
+
         let request = ChatRequest(
             model: model.fullName,
             messages: messages,
             stream: false
         )
-        
+
         print("Sending image with question...")
-        
+
         do {
             let response = try await chatSingle(request)
             print("\nResponse: \(response.message.content)")
@@ -212,11 +212,11 @@ struct TestCommand: CommandProtocol {
             print("(This is expected if the model doesn't support images)")
         }
     }
-    
+
     private func testToolCalling(model: OllamaModelName) async throws {
         print("🧪 Testing Tool/Function Calling")
         print("Model: \(model.fullName)\n")
-        
+
         let weatherTool = ToolDefinition(
             type: "function",
             function: FunctionDefinition(
@@ -238,24 +238,24 @@ struct TestCommand: CommandProtocol {
                 )
             )
         )
-        
+
         let messages = [
             ChatMessage(role: .user, content: "What's the weather like in Paris?")
         ]
-        
+
         let request = ChatRequest(
             model: model.fullName,
             messages: messages,
             tools: [weatherTool],
             stream: false
         )
-        
+
         print("Available tools: get_weather")
         print("User: \(messages[0].content)\n")
-        
+
         do {
             let response = try await chatSingle(request)
-            
+
             if let toolCalls = response.message.toolCalls, !toolCalls.isEmpty {
                 print("🔧 Tool Calls:")
                 for call in toolCalls {
@@ -270,11 +270,11 @@ struct TestCommand: CommandProtocol {
             print("❌ Error: \(error)")
         }
     }
-    
+
     private func testSuffix(model: OllamaModelName) async throws {
         print("🧪 Testing Suffix Parameter (Code Completion)")
         print("Model: \(model.fullName)\n")
-        
+
         let request = GenerateRequest(
             model: model.fullName,
             prompt: "def fibonacci(n):\n    if n <= 1:\n        return n\n    else:",
@@ -282,13 +282,13 @@ struct TestCommand: CommandProtocol {
             options: ModelOptions(temperature: 0),
             stream: false
         )
-        
+
         print("Prompt:")
         print(request.prompt)
         print("\nSuffix:")
         print(request.suffix ?? "")
         print("\nGenerating completion...\n")
-        
+
         do {
             let response = try await generateSingle(request)
             print("Complete code:")
@@ -297,8 +297,8 @@ struct TestCommand: CommandProtocol {
             print("❌ Error: \(error)")
         }
     }
-    
-    // Helper methods
+
+
     private func generateSingle(_ request: GenerateRequest) async throws -> GenerateResponse {
         let options = GenerationOptions(
             suffix: request.suffix,
@@ -312,33 +312,33 @@ struct TestCommand: CommandProtocol {
             keepAlive: request.keepAlive,
             think: request.think
         )
-        
+
         guard let modelName = OllamaModelName.parse(request.model) else {
             throw CLIError.invalidArgument("Invalid model name")
         }
-        
+
         guard let ollamaClient = client as? OllamaClient else {
             throw CLIError.invalidCommand("Client must be OllamaClient to use generateText")
         }
-        
+
         let stream = try await ollamaClient.generateText(
             prompt: request.prompt,
             model: modelName,
             options: options
         )
-        
+
         var finalResponse: GenerateResponse?
         for try await response in stream {
             finalResponse = response
         }
-        
+
         guard let response = finalResponse else {
             throw CLIError.invalidCommand("No response received")
         }
-        
+
         return response
     }
-    
+
     private func chatSingle(_ request: ChatRequest) async throws -> ChatResponse {
         let options = ChatOptions(
             tools: request.tools,
@@ -347,39 +347,39 @@ struct TestCommand: CommandProtocol {
             keepAlive: request.keepAlive,
             think: request.think
         )
-        
+
         guard let modelName = OllamaModelName.parse(request.model) else {
             throw CLIError.invalidArgument("Invalid model name")
         }
-        
+
         guard let ollamaClient = client as? OllamaClient else {
             throw CLIError.invalidCommand("Client must be OllamaClient to use chat")
         }
-        
+
         let stream = try await ollamaClient.chat(
             messages: request.messages,
             model: modelName,
             options: options
         )
-        
+
         var finalResponse: ChatResponse?
         for try await response in stream {
             finalResponse = response
         }
-        
+
         guard let response = finalResponse else {
             throw CLIError.invalidCommand("No response received")
         }
-        
+
         return response
     }
-    
+
     private func printTestHelp() {
         print("""
         Usage: swollama test [test-type] [options]
-        
+
         Test new Ollama API features.
-        
+
         Test Types:
             structured    Test structured output with JSON Schema
             thinking      Test thinking model support
@@ -388,22 +388,22 @@ struct TestCommand: CommandProtocol {
             tools         Test tool/function calling
             suffix        Test suffix parameter (code completion)
             all           Run all tests (default)
-        
+
         Options:
             --model, -m <model>    Model to use (default: llama3.2)
             --test, -t <type>      Test type to run
             --help, -h             Show this help message
-        
+
         Examples:
             # Run all tests
             swollama test
-            
+
             # Test structured output with a specific model
             swollama test structured --model llama3.1
-            
+
             # Test thinking mode with deepseek-r1
             swollama test thinking --model deepseek-r1
-            
+
             # Test multimodal with llava
             swollama test images --model llava
         """)

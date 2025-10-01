@@ -1,6 +1,6 @@
 import Foundation
 
-/// Options for chat completion
+
 public struct ChatOptions {
     public let tools: [ToolDefinition]?
     public let format: ResponseFormat?

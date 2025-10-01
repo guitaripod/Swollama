@@ -1,6 +1,6 @@
 import Foundation
 
-/// Represents model families supported by Ollama.
+
 public enum ModelFamily: String, Codable {
     case llama
     case mistral

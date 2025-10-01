@@ -1,21 +1,21 @@
 import Foundation
 import Swollama
 
-// ANSI Color codes and text styles
+
 enum TerminalStyle {
     static let reset = "\u{001B}[0m"
     static let bold = "\u{001B}[1m"
     static let dim = "\u{001B}[2m"
 
-    // Cyberpunk-inspired color palette
-    static let neonPink = "\u{001B}[38;2;255;20;147m"    // Hot pink
-    static let neonBlue = "\u{001B}[38;2;0;255;255m"     // Cyan
-    static let neonGreen = "\u{001B}[38;2;0;255;127m"    // Spring green
-    static let neonYellow = "\u{001B}[38;2;255;215;0m"   // Gold
-    static let mutedPurple = "\u{001B}[38;2;147;112;219m"// Medium purple
 
-    // Background colors
-    static let bgDark = "\u{001B}[48;2;25;25;35m"        // Dark background
+    static let neonPink = "\u{001B}[38;2;255;20;147m"
+    static let neonBlue = "\u{001B}[38;2;0;255;255m"
+    static let neonGreen = "\u{001B}[38;2;0;255;127m"
+    static let neonYellow = "\u{001B}[38;2;255;215;0m"
+    static let mutedPurple = "\u{001B}[38;2;147;112;219m"
+
+
+    static let bgDark = "\u{001B}[48;2;25;25;35m"
 }
 
 struct ChatCommand: CommandProtocol {
@@ -47,7 +47,7 @@ struct ChatCommand: CommandProtocol {
     }
 
     private func clearScreen() {
-        print("\u{001B}[2J\u{001B}[H", terminator: "") // Clear screen and move cursor to home position
+        print("\u{001B}[2J\u{001B}[H", terminator: "")
     }
 
     func execute(with arguments: [String]) async throws {
@@ -125,7 +125,7 @@ struct ChatCommand: CommandProtocol {
                     }
                 }
 
-                print("\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)") // Message separator
+                print("\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)")
 
             } catch {
                 print("\n\(TerminalStyle.neonPink)Error during chat: \(error)\(TerminalStyle.reset)")

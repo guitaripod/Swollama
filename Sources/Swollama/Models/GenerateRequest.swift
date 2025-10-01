@@ -1,32 +1,32 @@
 import Foundation
 
-/// Parameters for text generation requests.
+
 public struct GenerateRequest: Codable, Sendable {
-    /// The model to use for generation
+
     public let model: String
-    /// The prompt to generate text from
+
     public let prompt: String
-    /// Optional additional text to append after generated text
+
     public let suffix: String?
-    /// Optional list of base64-encoded images for multimodal models
+
     public let images: [String]?
-    /// The format to return the response in
+
     public let format: ResponseFormat?
-    /// Additional model parameters
+
     public let options: ModelOptions?
-    /// System message to override Modelfile
+
     public let system: String?
-    /// Template to use for generation
+
     public let template: String?
-    /// Context from previous request for conversation
+
     public let context: [Int]?
-    /// Whether to stream the response
+
     public let stream: Bool?
-    /// Whether to use raw prompting
+
     public let raw: Bool?
-    /// How long to keep model loaded in memory
+
     public let keepAlive: TimeInterval?
-    /// Whether the model should think before responding (for thinking models)
+
     public let think: Bool?
 
     private enum CodingKeys: String, CodingKey {
@@ -66,31 +66,31 @@ public struct GenerateRequest: Codable, Sendable {
     }
 }
 
-/// Response format options
+
 public enum ResponseFormat: Codable, Sendable {
-    /// Basic JSON formatting
+
     case json
-    /// JSON Schema for structured outputs
+
     case jsonSchema(JSONSchema)
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        
-        // Try to decode as string first
+
+
         if let stringValue = try? container.decode(String.self), stringValue == "json" {
             self = .json
             return
         }
-        
-        // Try to decode as JSON Schema
+
+
         if let schema = try? container.decode(JSONSchema.self) {
             self = .jsonSchema(schema)
             return
         }
-        
+
         throw DecodingError.dataCorruptedError(in: container, debugDescription: "ResponseFormat must be either 'json' or a JSON Schema object")
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
@@ -102,33 +102,33 @@ public enum ResponseFormat: Codable, Sendable {
     }
 }
 
-/// JSON Schema definition for structured outputs.
-///
-/// Use this to define the exact structure of the JSON response you want from the model.
-/// The model will be constrained to generate output that matches this schema.
-///
-/// ## Example
-/// ```swift
-/// let schema = JSONSchema(
-///     type: "object",
-///     properties: [
-///         "name": JSONSchemaProperty(type: "string"),
-///         "age": JSONSchemaProperty(type: "integer"),
-///         "skills": JSONSchemaProperty(
-///             type: "array",
-///             items: JSONSchemaProperty(type: "string")
-///         )
-///     ],
-///     required: ["name", "age"]
-/// )
-/// ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public struct JSONSchema: Codable, Sendable {
     public let type: String
     public let properties: [String: JSONSchemaProperty]?
     public let required: [String]?
     public let items: JSONSchemaProperty?
     public let additionalProperties: JSONSchemaPropertyOrBool?
-    
+
     public init(
         type: String,
         properties: [String: JSONSchemaProperty]? = nil,
@@ -144,12 +144,12 @@ public struct JSONSchema: Codable, Sendable {
     }
 }
 
-/// JSON Schema property definition
+
 public indirect enum JSONSchemaProperty: Codable, Sendable {
     case simple(type: String, description: String?, enum: [String]?)
     case array(type: String, items: JSONSchemaProperty, description: String?)
     case object(type: String, properties: [String: JSONSchemaProperty], required: [String]?, description: String?)
-    
+
     public init(
         type: String,
         description: String? = nil,
@@ -166,16 +166,16 @@ public indirect enum JSONSchemaProperty: Codable, Sendable {
             self = .simple(type: type, description: description, enum: `enum`)
         }
     }
-    
+
     private enum CodingKeys: String, CodingKey {
         case type, description, `enum`, items, properties, required
     }
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(String.self, forKey: .type)
         let description = try container.decodeIfPresent(String.self, forKey: .description)
-        
+
         if let items = try container.decodeIfPresent(JSONSchemaProperty.self, forKey: .items) {
             self = .array(type: type, items: items, description: description)
         } else if let properties = try container.decodeIfPresent([String: JSONSchemaProperty].self, forKey: .properties) {
@@ -186,21 +186,21 @@ public indirect enum JSONSchemaProperty: Codable, Sendable {
             self = .simple(type: type, description: description, enum: enumValues)
         }
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        
+
         switch self {
         case .simple(let type, let description, let enumValues):
             try container.encode(type, forKey: .type)
             try container.encodeIfPresent(description, forKey: .description)
             try container.encodeIfPresent(enumValues, forKey: .enum)
-            
+
         case .array(let type, let items, let description):
             try container.encode(type, forKey: .type)
             try container.encodeIfPresent(description, forKey: .description)
             try container.encode(items, forKey: .items)
-            
+
         case .object(let type, let properties, let required, let description):
             try container.encode(type, forKey: .type)
             try container.encodeIfPresent(description, forKey: .description)
@@ -211,11 +211,11 @@ public indirect enum JSONSchemaProperty: Codable, Sendable {
 }
 
 
-/// Represents either a JSONSchemaProperty or a boolean
+
 public enum JSONSchemaPropertyOrBool: Codable, Sendable {
     case property(JSONSchemaProperty)
     case bool(Bool)
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let bool = try? container.decode(Bool.self) {
@@ -226,7 +226,7 @@ public enum JSONSchemaPropertyOrBool: Codable, Sendable {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected either a boolean or a JSON Schema property")
         }
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
@@ -238,7 +238,7 @@ public enum JSONSchemaPropertyOrBool: Codable, Sendable {
     }
 }
 
-/// Base model options that can be applied to any request
+
 public struct ModelOptions: Codable, Sendable {
     public let numKeep: Int?
     public let seed: UInt32?

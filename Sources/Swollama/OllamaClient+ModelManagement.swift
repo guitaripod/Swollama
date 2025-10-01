@@ -1,7 +1,7 @@
 import Foundation
 
 extension OllamaClient {
-    
+
     public func listModels() async throws -> [ModelListEntry] {
         let data = try await makeRequest(endpoint: "tags")
         let response = try decode(data, as: ModelsResponse.self)
@@ -46,7 +46,7 @@ extension OllamaClient {
         name: OllamaModelName,
         options: PushOptions
     ) async throws -> AsyncThrowingStream<OperationProgress, Error> {
-        // Validate model name has namespace
+
         guard name.namespace != nil else {
             throw OllamaError.invalidParameters("Model name must include namespace for pushing")
         }
@@ -95,7 +95,7 @@ extension OllamaClient {
         let response = try decode(data, as: RunningModelsResponse.self)
         return response.models
     }
-    
+
     public func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<OperationProgress, Error> {
         return streamRequest(
             endpoint: "create",
@@ -104,7 +104,7 @@ extension OllamaClient {
             as: OperationProgress.self
         )
     }
-    
+
     public func checkBlobExists(digest: String) async throws -> Bool {
         do {
             _ = try await makeRequest(
@@ -113,7 +113,7 @@ extension OllamaClient {
             )
             return true
         } catch {
-            // Check if it's a 404 error
+
             if let ollamaError = error as? OllamaError,
                case .serverError(let message) = ollamaError,
                message.contains("404") || message.contains("Not Found") {
@@ -122,7 +122,7 @@ extension OllamaClient {
             throw error
         }
     }
-    
+
     public func pushBlob(digest: String, data: Data) async throws {
         _ = try await makeRequest(
             endpoint: "blobs/\(digest)",
@@ -130,7 +130,7 @@ extension OllamaClient {
             body: data
         )
     }
-    
+
     public func getVersion() async throws -> VersionResponse {
         let data = try await makeRequest(endpoint: "version")
         return try decode(data, as: VersionResponse.self)
@@ -158,9 +158,9 @@ private struct DeleteModelRequest: Codable {
     let name: String
 }
 
-/// Options for pulling models
+
 public struct PullOptions {
-    /// Whether to allow insecure connections
+
     public let allowInsecure: Bool
 
     public init(allowInsecure: Bool = false) {
@@ -168,9 +168,9 @@ public struct PullOptions {
     }
 }
 
-/// Options for pushing models
+
 public struct PushOptions {
-    /// Whether to allow insecure connections
+
     public let allowInsecure: Bool
 
     public init(allowInsecure: Bool = false) {

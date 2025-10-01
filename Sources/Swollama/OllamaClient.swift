@@ -3,7 +3,7 @@ import FoundationNetworking
 #endif
 import Foundation
 
-/// A client for interacting with the Ollama API
+
 public actor OllamaClient: OllamaProtocol {
     public let baseURL: URL
     public nonisolated let configuration: OllamaConfiguration
@@ -28,13 +28,13 @@ public actor OllamaClient: OllamaProtocol {
         self.encoder.dateEncodingStrategy = .iso8601
     }
 
-    /// Makes a request to the Ollama API with retry support
-    /// - Parameters:
-    ///   - endpoint: The API endpoint
-    ///   - method: HTTP method
-    ///   - body: Optional request body
-    /// - Returns: Data from the response
-    /// - Throws: OllamaError if the request fails
+
+
+
+
+
+
+
     func makeRequest(
         endpoint: String,
         method: String = "GET",
@@ -89,13 +89,13 @@ public actor OllamaClient: OllamaProtocol {
         throw OllamaError.networkError(lastError ?? URLError(.unknown))
     }
 
-    /// Creates an async sequence from a streaming response with optimized performance
-    /// - Parameters:
-    ///   - endpoint: The API endpoint
-    ///   - method: HTTP method
-    ///   - body: Request body
-    ///   - type: The type to decode responses as
-    /// - Returns: An async sequence of decoded responses
+
+
+
+
+
+
+
     func streamRequest<T: Decodable>(
         endpoint: String,
         method: String = "POST",
@@ -126,8 +126,8 @@ public actor OllamaClient: OllamaProtocol {
 
                     for try await chunk in dataStream {
                         buffer.append(chunk)
-                        
-                        // Process complete JSON lines in the buffer
+
+
                         while let newlineIndex = buffer.firstIndex(of: newline) {
                             let lineData = buffer[..<newlineIndex]
                             if !lineData.isEmpty {
@@ -135,12 +135,12 @@ public actor OllamaClient: OllamaProtocol {
                                     continuation.yield(decoded)
                                 }
                             }
-                            // Remove processed line including newline
+
                             buffer.removeSubrange(...newlineIndex)
                         }
                     }
 
-                    // Process any remaining data
+
                     if !buffer.isEmpty {
                         if let decoded = try? decoder.decode(T.self, from: buffer) {
                             continuation.yield(decoded)
@@ -159,10 +159,10 @@ public actor OllamaClient: OllamaProtocol {
         }
     }
 
-    /// Encodes a request body
-    /// - Parameter value: The value to encode
-    /// - Returns: Encoded data
-    /// - Throws: OllamaError if encoding fails
+
+
+
+
     public func encode<T: Encodable>(_ value: T) throws -> Data {
         do {
             return try encoder.encode(value)
@@ -171,12 +171,12 @@ public actor OllamaClient: OllamaProtocol {
         }
     }
 
-    /// Decodes a response body
-    /// - Parameters:
-    ///   - data: The data to decode
-    ///   - type: The type to decode as
-    /// - Returns: Decoded value
-    /// - Throws: OllamaError if decoding fails
+
+
+
+
+
+
     public func decode<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
         do {
             return try decoder.decode(type, from: data)

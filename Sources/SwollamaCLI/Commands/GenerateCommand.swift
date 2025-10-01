@@ -7,11 +7,11 @@ struct GenerateCommand: CommandProtocol {
 
     init(client: OllamaProtocol) {
         self.client = client
-        
+
         self.dateFormatter = DateFormatter()
         self.dateFormatter.dateFormat = "HH:mm:ss"
     }
-    
+
     private func printHeader(model: OllamaModelName) {
         print("\n\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╔════════════════════════════════════════╗\(TerminalStyle.reset)")
         print("\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)║\(TerminalStyle.neonPink) Text Generation: \(TerminalStyle.neonGreen)\(model.fullName)\(TerminalStyle.neonBlue) ║\(TerminalStyle.reset)")
@@ -44,7 +44,7 @@ struct GenerateCommand: CommandProtocol {
 
         clearScreen()
         printHeader(model: model)
-        
+
         var systemPrompt: String?
 
         while true {
@@ -85,7 +85,7 @@ struct GenerateCommand: CommandProtocol {
                 let options = GenerationOptions(
                     systemPrompt: systemPrompt
                 )
-                
+
                 let stream = try await client.generateText(
                     prompt: input,
                     model: model,
@@ -103,7 +103,7 @@ struct GenerateCommand: CommandProtocol {
                     }
                 }
 
-                print("\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)") // Message separator
+                print("\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)")
 
             } catch {
                 print("\n\(TerminalStyle.neonPink)Error during generation: \(error)\(TerminalStyle.reset)")

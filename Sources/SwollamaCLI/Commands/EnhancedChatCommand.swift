@@ -1,7 +1,7 @@
 import Foundation
 import Swollama
 
-// Enhanced terminal styles with more colors and effects
+
 enum EnhancedTerminalStyle {
     static let reset = "\u{001B}[0m"
     static let bold = "\u{001B}[1m"
@@ -9,8 +9,8 @@ enum EnhancedTerminalStyle {
     static let italic = "\u{001B}[3m"
     static let underline = "\u{001B}[4m"
     static let blink = "\u{001B}[5m"
-    
-    // Extended color palette
+
+
     static let neonPink = "\u{001B}[38;2;255;20;147m"
     static let neonBlue = "\u{001B}[38;2;0;255;255m"
     static let neonGreen = "\u{001B}[38;2;0;255;127m"
@@ -20,15 +20,15 @@ enum EnhancedTerminalStyle {
     static let red = "\u{001B}[38;2;255;69;0m"
     static let white = "\u{001B}[38;2;255;255;255m"
     static let gray = "\u{001B}[38;2;169;169;169m"
-    
-    // Background colors
+
+
     static let bgDark = "\u{001B}[48;2;25;25;35m"
     static let bgSuccess = "\u{001B}[48;2;0;100;0m"
     static let bgError = "\u{001B}[48;2;139;0;0m"
     static let bgWarning = "\u{001B}[48;2;255;140;0m"
 }
 
-// Chat configuration
+
 struct ChatConfiguration {
     var autoSave: Bool = false
     var savePath: String? = nil
@@ -40,48 +40,48 @@ struct ChatConfiguration {
     var typingDelay: TimeInterval = 0.0
 }
 
-// Command result for better error handling
+
 enum CommandResult {
     case `continue`
     case exit
     case error(String)
 }
 
-// Enhanced chat interface with more features
+
 class EnhancedChatCommand: CommandProtocol {
     private let client: OllamaProtocol
     private let dateFormatter: DateFormatter
     private let timeFormatter: DateFormatter
     private var configuration = ChatConfiguration()
-    
+
     init(client: OllamaProtocol) {
         self.client = client
-        
+
         self.dateFormatter = DateFormatter()
         self.dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        
+
         self.timeFormatter = DateFormatter()
         self.timeFormatter.dateFormat = "HH:mm:ss"
     }
-    
-    // MARK: - UI Components
-    
+
+
+
     private func printHeader(model: OllamaModelName) {
         let width = 60
         let modelText = " Model: \(model.fullName) "
         let padding = (width - modelText.count - 2) / 2
         let leftPad = String(repeating: "═", count: padding)
         let rightPad = String(repeating: "═", count: width - modelText.count - 2 - padding)
-        
+
         print("\n\(EnhancedTerminalStyle.neonBlue)╔\(String(repeating: "═", count: width))╗\(EnhancedTerminalStyle.reset)")
         print("\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(String(repeating: " ", count: width))\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)")
         print("\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(leftPad)\(EnhancedTerminalStyle.neonGreen)\(modelText)\(EnhancedTerminalStyle.neonPink)\(rightPad)\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)")
         print("\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(String(repeating: " ", count: width))\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)")
         print("\(EnhancedTerminalStyle.neonBlue)╚\(String(repeating: "═", count: width))╝\(EnhancedTerminalStyle.reset)\n")
-        
+
         printCommands()
     }
-    
+
     private func printCommands() {
         print("\(EnhancedTerminalStyle.mutedPurple)Available Commands:\(EnhancedTerminalStyle.reset)")
         print("  \(EnhancedTerminalStyle.neonYellow)/exit, /quit\(EnhancedTerminalStyle.gray) - End conversation")
@@ -96,60 +96,60 @@ class EnhancedChatCommand: CommandProtocol {
         print("  \(EnhancedTerminalStyle.neonYellow)/help\(EnhancedTerminalStyle.gray) - Show this help")
         print("\(EnhancedTerminalStyle.neonBlue)═══════════════════════════════════════════════════════════\(EnhancedTerminalStyle.reset)\n")
     }
-    
+
     private func printTimestamp() {
         guard configuration.showTimestamps else { return }
         let timestamp = timeFormatter.string(from: Date())
         print("\(EnhancedTerminalStyle.dim)[\(timestamp)]\(EnhancedTerminalStyle.reset) ", terminator: "")
     }
-    
+
     private func clearScreen() {
         print("\u{001B}[2J\u{001B}[H", terminator: "")
     }
-    
+
     private func printError(_ message: String) {
         print("\n\(EnhancedTerminalStyle.bgError)\(EnhancedTerminalStyle.white) ERROR \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.red)\(message)\(EnhancedTerminalStyle.reset)")
     }
-    
+
     private func printSuccess(_ message: String) {
         print("\n\(EnhancedTerminalStyle.bgSuccess)\(EnhancedTerminalStyle.white) SUCCESS \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.neonGreen)\(message)\(EnhancedTerminalStyle.reset)")
     }
-    
+
     private func printWarning(_ message: String) {
         print("\n\(EnhancedTerminalStyle.bgWarning)\(EnhancedTerminalStyle.white) WARNING \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.orange)\(message)\(EnhancedTerminalStyle.reset)")
     }
-    
+
     private func printTypingIndicator() {
         print("\(EnhancedTerminalStyle.dim)\(configuration.streamingIndicator)\(EnhancedTerminalStyle.reset)", terminator: "")
         fflush(stdout)
-        // Clear the indicator
+
         print("\r", terminator: "")
     }
-    
-    // MARK: - Command Processing
-    
+
+
+
     private func processCommand(_ input: String, messages: inout [ChatMessage], model: inout OllamaModelName) -> CommandResult {
         let parts = input.split(separator: " ", maxSplits: 1)
         guard !parts.isEmpty else { return .continue }
-        
+
         let command = String(parts[0]).lowercased()
         let argument = parts.count > 1 ? String(parts[1]) : ""
-        
+
         switch command {
         case "/exit", "/quit":
             return .exit
-            
+
         case "/clear":
             clearScreen()
             printHeader(model: model)
             messages.removeAll()
             printSuccess("Conversation cleared")
             return .continue
-            
+
         case "/help":
             printCommands()
             return .continue
-            
+
         case "/system":
             guard !argument.isEmpty else {
                 printError("System message cannot be empty")
@@ -159,13 +159,13 @@ class EnhancedChatCommand: CommandProtocol {
             messages.insert(ChatMessage(role: .system, content: argument), at: 0)
             printSuccess("System message updated")
             return .continue
-            
+
         case "/save":
             return saveConversation(messages: messages, filename: argument)
-            
+
         case "/load":
             return loadConversation(messages: &messages, filename: argument)
-            
+
         case "/model":
             guard !argument.isEmpty else {
                 printError("Model name required")
@@ -180,24 +180,24 @@ class EnhancedChatCommand: CommandProtocol {
             printHeader(model: model)
             printSuccess("Switched to model: \(model.fullName)")
             return .continue
-            
+
         case "/retry":
             guard messages.count >= 2 else {
                 printError("No previous message to retry")
                 return .continue
             }
-            // Remove last assistant message if exists
+
             if messages.last?.role == .assistant {
                 messages.removeLast()
             }
             return .continue
-            
+
         case "/undo":
             guard messages.count >= 2 else {
                 printError("No messages to undo")
                 return .continue
             }
-            // Remove last exchange (user + assistant)
+
             if messages.last?.role == .assistant {
                 messages.removeLast()
             }
@@ -206,25 +206,25 @@ class EnhancedChatCommand: CommandProtocol {
             }
             printSuccess("Last exchange removed")
             return .continue
-            
+
         case "/tokens":
             configuration.showTokenCount.toggle()
             printSuccess("Token counting \(configuration.showTokenCount ? "enabled" : "disabled")")
             return .continue
-            
+
         default:
             printError("Unknown command: \(command)")
             return .continue
         }
     }
-    
-    // MARK: - Conversation Management
-    
+
+
+
     private func saveConversation(messages: [ChatMessage], filename: String) -> CommandResult {
         let actualFilename = filename.isEmpty ? "chat_\(Date().timeIntervalSince1970).json" : filename
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
-        
+
         do {
             let data = try encoder.encode(messages)
             let url = URL(fileURLWithPath: actualFilename)
@@ -233,16 +233,16 @@ class EnhancedChatCommand: CommandProtocol {
         } catch {
             printError("Failed to save conversation: \(error.localizedDescription)")
         }
-        
+
         return .continue
     }
-    
+
     private func loadConversation(messages: inout [ChatMessage], filename: String) -> CommandResult {
         guard !filename.isEmpty else {
             printError("Filename required")
             return .continue
         }
-        
+
         do {
             let url = URL(fileURLWithPath: filename)
             let data = try Data(contentsOf: url)
@@ -252,48 +252,48 @@ class EnhancedChatCommand: CommandProtocol {
         } catch {
             printError("Failed to load conversation: \(error.localizedDescription)")
         }
-        
+
         return .continue
     }
-    
-    // MARK: - Token Estimation
-    
+
+
+
     private func estimateTokens(for text: String) -> Int {
-        // Rough estimation: 1 token ≈ 4 characters
+
         return text.count / 4
     }
-    
+
     private func printTokenInfo(messages: [ChatMessage]) {
         guard configuration.showTokenCount else { return }
-        
+
         let totalTokens = messages.reduce(0) { sum, message in
             sum + estimateTokens(for: message.content)
         }
-        
+
         let percentage = Double(totalTokens) / Double(configuration.maxContextTokens) * 100
         let color = percentage > 90 ? EnhancedTerminalStyle.red :
                     percentage > 70 ? EnhancedTerminalStyle.orange :
                     EnhancedTerminalStyle.gray
-        
+
         print("\(color)[Tokens: ~\(totalTokens)/\(configuration.maxContextTokens) (\(Int(percentage))%)]\(EnhancedTerminalStyle.reset)")
     }
-    
-    // MARK: - Main Chat Loop
-    
+
+
+
     private func handleUserInput(model: inout OllamaModelName, messages: inout [ChatMessage]) async -> Bool {
         printTimestamp()
         print("\(EnhancedTerminalStyle.neonGreen)You:\(EnhancedTerminalStyle.reset) ", terminator: "")
-        
+
         guard let input = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines) else {
             return false
         }
-        
-        // Handle empty input
+
+
         guard !input.isEmpty else {
             return true
         }
-        
-        // Handle commands
+
+
         if input.starts(with: "/") {
             switch processCommand(input, messages: &messages, model: &model) {
             case .exit:
@@ -306,43 +306,43 @@ class EnhancedChatCommand: CommandProtocol {
                 return true
             }
         }
-        
-        // Add user message
+
+
         messages.append(ChatMessage(role: .user, content: input))
-        
-        // Generate response
+
+
         await generateResponse(messages: &messages, model: model)
-        
+
         return true
     }
-    
+
     private func generateResponse(messages: inout [ChatMessage], model: OllamaModelName) async {
         printTimestamp()
         print("\(EnhancedTerminalStyle.neonBlue)Assistant:\(EnhancedTerminalStyle.reset) ", terminator: "")
         fflush(stdout)
-        
+
         guard let client = client as? OllamaClient else {
             printError("Chat functionality requires OllamaClient")
             return
         }
-        
+
         do {
             let startTime = Date()
             var fullResponse = ""
             var tokenCount = 0
-            
-            // Show typing indicator briefly
+
+
             if configuration.typingDelay > 0 {
                 printTypingIndicator()
                 try await Task.sleep(nanoseconds: UInt64(configuration.typingDelay * 1_000_000_000))
             }
-            
+
             let stream = try await client.chat(
                 messages: messages,
                 model: model,
                 options: .default
             )
-            
+
             for try await response in stream {
                 if !response.message.content.isEmpty {
                     let content = response.message.content
@@ -351,11 +351,11 @@ class EnhancedChatCommand: CommandProtocol {
                     fullResponse += content
                     tokenCount += 1
                 }
-                
+
                 if response.done {
                     messages.append(ChatMessage(role: .assistant, content: fullResponse))
-                    
-                    // Print statistics if enabled
+
+
                     if configuration.showTokenCount {
                         let duration = Date().timeIntervalSince(startTime)
                         let tokensPerSecond = Double(tokenCount) / duration
@@ -363,20 +363,20 @@ class EnhancedChatCommand: CommandProtocol {
                     }
                 }
             }
-            
+
             print("\n\(EnhancedTerminalStyle.neonBlue)────────────────────────────────────────────────────────────\(EnhancedTerminalStyle.reset)")
-            
-            // Show token usage
+
+
             printTokenInfo(messages: messages)
-            
+
         } catch {
             handleError(error)
         }
     }
-    
+
     private func handleError(_ error: Error) {
-        print() // New line after incomplete response
-        
+        print()
+
         if let ollamaError = error as? OllamaError {
             switch ollamaError {
             case .modelNotFound:
@@ -403,19 +403,19 @@ class EnhancedChatCommand: CommandProtocol {
             printError("Unexpected error: \(error.localizedDescription)")
         }
     }
-    
-    // MARK: - Main Execute Function
-    
+
+
+
     func execute(with arguments: [String]) async throws {
         guard !arguments.isEmpty else {
             throw CLIError.missingArgument("Model name required. Usage: swollama chat <model>")
         }
-        
+
         guard var model = OllamaModelName.parse(arguments[0]) else {
             throw CLIError.invalidArgument("Invalid model name format: '\(arguments[0])'")
         }
-        
-        // Parse additional arguments
+
+
         for i in 1..<arguments.count {
             switch arguments[i] {
             case "--no-timestamps":
@@ -433,27 +433,27 @@ class EnhancedChatCommand: CommandProtocol {
                 break
             }
         }
-        
+
         clearScreen()
         printHeader(model: model)
-        
+
         var messages: [ChatMessage] = []
-        
-        // Install signal handlers for graceful shutdown
+
+
         installSignalHandlers()
-        
-        // Main chat loop
+
+
         while await handleUserInput(model: &model, messages: &messages) {
-            // Continue chatting
+
         }
-        
-        // Auto-save on exit if enabled
+
+
         if configuration.autoSave {
             let filename = configuration.savePath ?? "chat_\(Date().timeIntervalSince1970).json"
             _ = saveConversation(messages: messages, filename: filename)
         }
     }
-    
+
     private func installSignalHandlers() {
         #if os(Linux)
         signal(SIGINT) { _ in

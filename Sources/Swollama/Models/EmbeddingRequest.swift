@@ -1,6 +1,6 @@
 import Foundation
 
-/// Parameters for embedding generation requests
+
 public struct EmbeddingRequest: Codable, Sendable {
     public init(model: String, input: EmbeddingInput, truncate: Bool? = nil, options: ModelOptions? = nil, keepAlive: TimeInterval? = nil) {
         self.model = model
@@ -9,16 +9,16 @@ public struct EmbeddingRequest: Codable, Sendable {
         self.options = options
         self.keepAlive = keepAlive
     }
-    
-    /// The model to use for embeddings
+
+
     public let model: String
-    /// The text or array of text to generate embeddings for
+
     public let input: EmbeddingInput
-    /// Whether to truncate input to fit context length
+
     public let truncate: Bool?
-    /// Additional model parameters
+
     public let options: ModelOptions?
-    /// How long to keep model loaded in memory
+
     public let keepAlive: TimeInterval?
 
     private enum CodingKeys: String, CodingKey {
@@ -27,7 +27,7 @@ public struct EmbeddingRequest: Codable, Sendable {
     }
 }
 
-/// Input for embedding generation
+
 public enum EmbeddingInput: Codable, Sendable {
     case single(String)
     case multiple([String])

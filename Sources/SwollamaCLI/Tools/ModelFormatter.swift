@@ -1,17 +1,17 @@
 import Foundation
 import Swollama
 
-/// Protocol defining the interface for formatting model information.
+
 protocol ModelFormatter {
-    /// Formats a model entry into a human-readable string.
-    /// - Parameter model: The model entry to format.
-    /// - Returns: A formatted string representation of the model.
+
+
+
     func format(_ model: ModelListEntry) -> String
 }
 
-/// Default implementation of ModelFormatter that provides a standardized format.
+
 struct DefaultModelFormatter: ModelFormatter {
-    /// Date formatter configured for displaying model modification times.
+
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -19,9 +19,9 @@ struct DefaultModelFormatter: ModelFormatter {
         return formatter
     }()
 
-    /// Formats a model entry into a multi-line string containing key model information.
-    /// - Parameter model: The model entry to format.
-    /// - Returns: A formatted string with model details including size, family, parameters, and modification date.
+
+
+
     func format(_ model: ModelListEntry) -> String {
         """
         - \(model.name)
@@ -30,16 +30,16 @@ struct DefaultModelFormatter: ModelFormatter {
           Parameters: \(model.details.parameterSize)
           Quantization: \(model.details.quantizationLevel)
           Modified: \(dateFormatter.string(from: model.modifiedAt))
-        
+
         """
     }
 }
 
-/// Utility struct for formatting file sizes into human-readable strings.
+
 struct FileSize {
-    /// Formats a byte count into a human-readable string with appropriate units.
-    /// - Parameter bytes: The number of bytes to format.
-    /// - Returns: A formatted string with the appropriate size unit (GB, MB, KB, or bytes).
+
+
+
     static func format(bytes: Int) -> String {
         let gigabyte = 1024 * 1024 * 1024
         let megabyte = 1024 * 1024

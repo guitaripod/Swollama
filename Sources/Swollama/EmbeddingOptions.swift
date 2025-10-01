@@ -1,6 +1,6 @@
 import Foundation
 
-/// Options for embedding generation
+
 public struct EmbeddingOptions {
     public let truncate: Bool?
     public let modelOptions: ModelOptions?
