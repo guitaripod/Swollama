@@ -70,13 +70,25 @@ extension NetworkingSupport {
 
         try process.run()
 
+        actor ResponseHolder {
+            var response: HTTPURLResponse?
+
+            func setResponse(_ response: HTTPURLResponse) {
+                self.response = response
+            }
+
+            func getResponse() -> HTTPURLResponse? {
+                return response
+            }
+        }
+
+        let responseHolder = ResponseHolder()
 
         let stream = AsyncThrowingStream<Data, Error> { continuation in
-            Task {
+            Task { [tempFileURL] in
                 let handle = pipe.fileHandleForReading
                 var headerData = Data()
                 var headersParsed = false
-                var httpResponse: HTTPURLResponse?
 
 
                 while process.isRunning || handle.availableData.count > 0 {
@@ -109,12 +121,14 @@ extension NetworkingSupport {
                             }
 
 
-                            httpResponse = HTTPURLResponse(
+                            if let httpResponse = HTTPURLResponse(
                                 url: url,
                                 statusCode: statusCode,
                                 httpVersion: "HTTP/1.1",
                                 headerFields: parseHeaders(from: headers)
-                            )
+                            ) {
+                                await responseHolder.setResponse(httpResponse)
+                            }
 
 
                             let bodyStartIndex = headerString.distance(from: headerString.startIndex, to: range.upperBound)
@@ -162,7 +176,7 @@ extension NetworkingSupport {
             }
 
 
-            continuation.onTermination = { @Sendable _ in
+            continuation.onTermination = { @Sendable [tempFileURL] _ in
                 if process.isRunning {
                     process.terminate()
                     process.waitUntilExit()
@@ -178,7 +192,11 @@ extension NetworkingSupport {
         try await Task.sleep(for: .milliseconds(100))
 
 
-        guard let response = HTTPURLResponse(
+        if let response = await responseHolder.getResponse() {
+            return (stream, response as URLResponse)
+        }
+
+        guard let fallbackResponse = HTTPURLResponse(
             url: url,
             statusCode: 200,
             httpVersion: "HTTP/1.1",
@@ -187,7 +205,7 @@ extension NetworkingSupport {
             throw URLError(.badServerResponse)
         }
 
-        return (stream, response as URLResponse)
+        return (stream, fallbackResponse as URLResponse)
     }
 
 
