@@ -134,12 +134,25 @@ extension OllamaClient {
     }
 
     private func validateDigest(_ digest: String) throws {
-        let pattern = "^(sha256|sha512):[a-f0-9]{64,128}$"
+        let pattern = "^(sha256|sha512):[a-fA-F0-9]{64,128}$"
         let regex = try NSRegularExpression(pattern: pattern, options: .caseInsensitive)
         let range = NSRange(digest.startIndex..<digest.endIndex, in: digest)
 
         guard regex.firstMatch(in: digest, options: [], range: range) != nil else {
             throw OllamaError.invalidParameters("Invalid digest format. Expected format: sha256:<hex> or sha512:<hex>")
+        }
+
+        let components = digest.split(separator: ":")
+        guard components.count == 2 else {
+            throw OllamaError.invalidParameters("Invalid digest format. Expected format: sha256:<hex> or sha512:<hex>")
+        }
+
+        let hashLength = components[1].count
+        if components[0].lowercased() == "sha256" && hashLength != 64 {
+            throw OllamaError.invalidParameters("Invalid digest format. SHA256 requires exactly 64 hex characters")
+        }
+        if components[0].lowercased() == "sha512" && hashLength != 128 {
+            throw OllamaError.invalidParameters("Invalid digest format. SHA512 requires exactly 128 hex characters")
         }
     }
 
