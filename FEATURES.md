@@ -1,20 +1,122 @@
 # Swollama Feature Documentation
 
-Complete guide to all features in Swollama, including the latest Ollama API capabilities.
+Complete guide to all features in Swollama, including autonomous agents and the latest Ollama API capabilities.
 
 ---
 
-## 📋 Quick Navigation
+## Quick Navigation
 
-- [Core Features](#-core-features)
-- [API Methods](#-api-methods)
-- [Advanced Features](#-advanced-features)
-- [CLI Commands](#-cli-commands)
-- [Platform Support](#-platform-support)
+- [Autonomous Agents](#autonomous-agents)
+- [Core Features](#core-features)
+- [API Methods](#api-methods)
+- [Advanced Features](#advanced-features)
+- [CLI Commands](#cli-commands)
+- [Platform Support](#platform-support)
 
 ---
 
-## ✨ Core Features
+## Autonomous Agents
+
+<details>
+<summary><b>OllamaAgent - Autonomous Workflows with Web Search</b></summary>
+
+Autonomous agent that combines local chat models with cloud-based web search to answer complex queries requiring current information.
+
+```swift
+import Swollama
+
+let agent = OllamaAgent(
+    webSearchAPIKey: "your_ollama_api_key",
+    configuration: AgentConfiguration(
+        maxIterations: 10,
+        truncateResults: 8000,
+        enableThinking: true
+    )
+)
+
+guard let model = OllamaModelName.parse("qwen2.5:3b") else { fatalError() }
+
+for try await event in agent.run(
+    prompt: "What are the latest Swift 6 features announced in 2024?",
+    model: model
+) {
+    switch event {
+    case .thinking(let thought):
+        print("Thinking: \(thought)")
+    case .toolCall(let name, let args):
+        print("Calling tool: \(name)")
+        print("Arguments: \(args)")
+    case .toolResult(let name, let content):
+        print("Tool \(name) returned \(content.count) characters")
+    case .message(let answer):
+        print("\nFinal Answer:\n\(answer)")
+    case .done:
+        print("\nWorkflow complete")
+    }
+}
+```
+
+**How it works:**
+1. Agent receives user prompt
+2. Model decides whether to search the web or answer directly
+3. If tool is needed, executes web_search or web_fetch
+4. Feeds results back to model
+5. Repeats until model provides final answer or reaches iteration limit
+
+**Available tools:**
+- `web_search(query: String, maxResults: Int?)` - Search the web
+- `web_fetch(url: String)` - Fetch full page content
+
+**Configuration options:**
+- `maxIterations`: Maximum tool-calling loops (default: 10)
+- `truncateResults`: Max characters for tool results (default: 8000)
+- `enableThinking`: Enable reasoning traces (default: true)
+- `modelOptions`: Custom model parameters
+
+**CLI Usage:**
+```bash
+swollama agent qwen2.5:3b --prompt "Latest Swift features"
+swollama agent llama3.2 --prompt "Compare TypeScript vs Swift" --max-iterations 15
+```
+
+</details>
+
+<details>
+<summary><b>OllamaWebSearchClient - Cloud Web Search API</b></summary>
+
+Direct access to Ollama's cloud web search and fetch capabilities.
+
+```swift
+let client = OllamaWebSearchClient(apiKey: "your_api_key")
+
+// Search the web
+let searchResults = try await client.webSearch(
+    query: "Swift concurrency best practices",
+    maxResults: 5
+)
+
+for result in searchResults.results {
+    print("\(result.title)")
+    print("\(result.url)")
+    print("\(result.snippet)\n")
+}
+
+// Fetch full page content
+let page = try await client.webFetch(url: "https://swift.org/blog/")
+print("Title: \(page.title)")
+print("Content length: \(page.content.count)")
+print("Links found: \(page.links.count)")
+```
+
+**Response types:**
+- `WebSearchResponse`: Contains array of search results with title, URL, snippet
+- `WebFetchResponse`: Contains page title, full content, and all links
+
+</details>
+
+---
+
+## Core Features
 
 <details>
 <summary><b>Structured Outputs with JSON Schema</b></summary>
@@ -229,7 +331,7 @@ let stream = try await client.generateText(
 
 ---
 
-## 🔌 API Methods
+## API Methods
 
 <details>
 <summary><b>Text Generation</b></summary>
@@ -243,13 +345,6 @@ public func generateText(
     options: GenerationOptions = .default
 ) async throws -> AsyncThrowingStream<GenerateResponse, Error>
 ```
-
-**Features:**
-- Streaming responses
-- Context preservation
-- Custom generation parameters
-- JSON mode support
-- Structured outputs
 
 **Example:**
 ```swift
@@ -284,13 +379,6 @@ public func chat(
     options: ChatOptions = .default
 ) async throws -> AsyncThrowingStream<ChatResponse, Error>
 ```
-
-**Features:**
-- Multi-turn conversations
-- System messages
-- Tool/function calling
-- Image inputs (multimodal)
-- Thinking mode
 
 **Example:**
 ```swift
@@ -438,13 +526,8 @@ let request = CreateModelRequest(
 
 **CLI Usage:**
 ```bash
-# Create custom model
 swollama create mario --from llama3.2 --system "You are Mario"
-
-# Quantize model
 swollama create llama3.2:q4 --from llama3.2:fp16 --quantize q4_K_M
-
-# Custom temperature
 swollama create assistant --from llama3.2 --temperature 0.7
 ```
 
@@ -471,10 +554,7 @@ try await client.pushBlob(
 
 **CLI Usage:**
 ```bash
-# Check blob
 swollama blob check sha256:29fdb92e57cf...
-
-# Push blob
 swollama blob push sha256:29fdb92e57cf... model.gguf
 ```
 
@@ -499,7 +579,7 @@ swollama version
 
 ---
 
-## 🚀 Advanced Features
+## Advanced Features
 
 <details>
 <summary><b>Custom Generation Parameters</b></summary>
@@ -528,7 +608,6 @@ let stream = try await client.generateText(
 - `temperature`: Creativity level (0.0 - 2.0)
 - `topK`: Token sampling limit
 - `topP`: Nucleus sampling threshold
-- `topA`: Alternative sampling method
 - `minP`: Minimum probability threshold
 - `repeatPenalty`: Penalize repetition
 - `presencePenalty`: Penalize token presence
@@ -625,12 +704,16 @@ do {
 
 ---
 
-## 🖥️ CLI Commands
+## CLI Commands
 
 <details>
 <summary><b>Complete Command Reference</b></summary>
 
 ```bash
+# Agent
+swollama agent <model> --prompt "query"
+swollama agent qwen2.5:3b --prompt "Latest Swift features" --max-iterations 15
+
 # Model Management
 swollama list                          # List available models
 swollama show <model>                  # Show model information
@@ -698,15 +781,15 @@ swollama chat llama3.2
 
 ---
 
-## 🌐 Platform Support
+## Platform Support
 
 <details>
 <summary><b>Supported Platforms</b></summary>
 
-- ✅ **macOS 14+** - Full native support with URLSession
-- ✅ **Linux** - Optimized with curl subprocess for streaming
-- ✅ **iOS 17+** - Full support for mobile apps
-- ✅ **Docker** - Container-ready deployment
+- **macOS 14+** - Full native support with URLSession
+- **Linux** - Optimized with curl subprocess for streaming
+- **iOS 17+** - Full support for mobile apps
+- **Docker** - Container-ready deployment
 
 **Platform-specific optimizations:**
 - macOS/iOS: Native `URLSession.bytes(for:)` streaming
@@ -730,7 +813,7 @@ swollama chat llama3.2
 
 ---
 
-## 📚 API Endpoint Coverage
+## API Endpoint Coverage
 
 All Ollama API endpoints are fully supported:
 
@@ -753,7 +836,7 @@ All Ollama API endpoints are fully supported:
 
 ---
 
-## 🔗 Additional Resources
+## Additional Resources
 
 - **Official API Documentation**: https://github.com/ollama/ollama/blob/main/docs/api.md
 - **Package Documentation**: https://guitaripod.github.io/Swollama/documentation/swollama/
@@ -762,7 +845,7 @@ All Ollama API endpoints are fully supported:
 
 ---
 
-## 📝 Notes
+## Notes
 
 - All code examples use the latest API with proper error handling
 - The `done_reason` field is available in both `ChatResponse` and `GenerateResponse`

@@ -9,154 +9,194 @@
 
 A comprehensive, protocol-oriented Swift client for the Ollama API. This package provides a type-safe way to interact with Ollama's machine learning models, supporting all API endpoints with native Swift concurrency.
 
-## Table of Contents
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [CLI Usage](#cli-usage)
-- [Documentation](#documentation)
-- [Examples](#examples)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
-
 ## Features
-- ✨ Full Ollama API coverage
-- 🔄 Native async/await and AsyncSequence support
-- 🛡️ Type-safe API with comprehensive error handling
-- 🔒 Thread-safe implementation using Swift actors
-- 🔄 Automatic retry logic for failed requests
-- 📦 Zero external dependencies
+
+- Autonomous agents with web search capabilities
+- Full Ollama API coverage (chat, generation, embeddings, model management)
+- Native async/await and AsyncSequence support
+- Type-safe API with comprehensive error handling
+- Thread-safe implementation using Swift actors
+- Automatic retry logic with exponential backoff
+- Cross-platform (macOS, Linux, iOS)
+- Zero external dependencies
 
 ## Requirements
-- macOS 14+
-- Xcode 15.0+
+
+- macOS 14+ / Linux
 - Swift 5.9+
-- [Ollama](https://ollama.ai) installed and running locally or on a remote server
+- [Ollama](https://ollama.ai) installed and running
 
 ## Installation
 
 ### Swift Package Manager
-Add Swollama to your Swift package dependencies in `Package.swift`:
+
+Add Swollama to your `Package.swift`:
+
 ```swift
 dependencies: [
     .package(url: "https://github.com/guitaripod/Swollama.git", from: "1.0.0")
 ]
 ```
 
-Or add it through Xcode:
-1. File > Add Package Dependencies
-2. Enter the repository URL: `https://github.com/guitaripod/Swollama.git`
+Or add via Xcode: File > Add Package Dependencies > `https://github.com/guitaripod/Swollama.git`
 
 ## Quick Start
+
+### Autonomous Agent with Web Search
+
 ```swift
 import Swollama
 
-// Initialize client
+let agent = OllamaAgent(webSearchAPIKey: "your_ollama_api_key")
+guard let model = OllamaModelName.parse("qwen2.5:3b") else { fatalError() }
+
+for try await event in agent.run(
+    prompt: "What are the latest features in Swift 6?",
+    model: model
+) {
+    switch event {
+    case .thinking(let thought):
+        print("Thinking: \(thought)")
+    case .toolCall(let name, _):
+        print("Using tool: \(name)")
+    case .message(let answer):
+        print("Answer: \(answer)")
+    case .done:
+        print("Complete")
+    default:
+        break
+    }
+}
+```
+
+### Chat Completion
+
+```swift
+import Swollama
+
 let client = OllamaClient()
+guard let model = OllamaModelName.parse("llama3.2") else { fatalError() }
 
-// List available models
-let models = try await client.listModels()
-for model in models {
-    print(model.name)
-}
-
-// Start a chat
-guard let model = OllamaModelName.parse("llama3.2") else {
-    throw CLIError.invalidArgument("Invalid model name format")
-}
 let responses = try await client.chat(
     messages: [
         ChatMessage(role: .user, content: "Hello! How are you?")
     ],
     model: model
 )
+
 for try await response in responses {
     print(response.message.content, terminator: "")
 }
 ```
+
 ## CLI Usage
 
-Stream a chat response:
+Interactive chat:
 ```bash
 swollama chat llama3.2
 ```
-![CleanShot 2024-10-27 at 15 12 39](https://github.com/user-attachments/assets/041a5218-9b2c-487f-9e43-cd2f004200b9)
 
-Generate text with specific parameters:
+Autonomous agent:
+```bash
+swollama agent qwen2.5:3b --prompt "What's new in Swift?"
+```
+
+Generate text:
 ```bash
 swollama generate codellama
 ```
 
-Pull a new model:
+Model management:
 ```bash
 swollama pull llama3.2
-```
-![CleanShot 2024-10-27 at 15 19 34](https://github.com/user-attachments/assets/1cb63934-969c-42d2-83f4-d44d3c43a0da)
-
-List all available models:
-```bash
 swollama list
-```
-![CleanShot 2024-10-27 at 15 24 28@2x](https://github.com/user-attachments/assets/4447a97f-fea0-4d6a-8d33-440b5d06710a)
-
-Show model information:
-```bash
 swollama show llama3.2
-```
-
-Copy a model:
-```bash
-swollama copy llama3.2 my-llama3.2
-```
-
-Delete a model:
-```bash
-swollama delete my-llama3.2
-```
-
-List running models:
-```bash
-swollama ps
+swollama delete old-model
 ```
 
 ## Documentation
-For complete API documentation, usage examples, and best practices, visit the [Documentation](https://guitaripod.github.io/Swollama/documentation/swollama/).
+
+Complete API documentation, examples, and feature guides:
+- [API Reference](https://guitaripod.github.io/Swollama/documentation/swollama/)
+- [Feature Guide](FEATURES.md)
 
 ## Examples
 
-### Chat Completion
+### Text Generation with Options
+
 ```swift
 let client = OllamaClient()
-let responses = try await client.chat(
-    messages: [
-        .init(role: .system, content: "You are a helpful assistant"),
-        .init(role: .user, content: "Write a haiku about Swift")
-    ],
-    model: .init("llama3.2")!
+guard let model = OllamaModelName.parse("llama3.2") else { fatalError() }
+
+let stream = try await client.generateText(
+    prompt: "Explain quantum computing",
+    model: model,
+    options: GenerationOptions(
+        temperature: 0.7,
+        topP: 0.9,
+        numPredict: 200
+    )
 )
 
-for try await response in responses {
-    print(response.message.content)
+for try await response in stream {
+    print(response.response, terminator: "")
 }
 ```
 
-### Generate Text
+### Embeddings
+
 ```swift
 let client = OllamaClient()
-let responses = try await client.generate(
-    prompt: "Explain quantum computing",
-    model: .init("llama3.2")!
+guard let model = OllamaModelName.parse("nomic-embed-text") else { fatalError() }
+
+let response = try await client.generateEmbeddings(
+    input: .single("Hello world"),
+    model: model
 )
 
-for try await response in responses {
-    print(response.content)
+print("Vector dimensions: \(response.embeddings[0].count)")
+```
+
+### Tool Calling
+
+```swift
+let tools = [
+    ToolDefinition(
+        type: "function",
+        function: FunctionDefinition(
+            name: "get_weather",
+            description: "Get current weather",
+            parameters: JSONSchema(
+                type: "object",
+                properties: [
+                    "location": JSONSchemaProperty(type: "string")
+                ],
+                required: ["location"]
+            )
+        )
+    )
+]
+
+let stream = try await client.chat(
+    messages: [ChatMessage(role: .user, content: "What's the weather in Paris?")],
+    model: OllamaModelName.parse("llama3.2")!,
+    options: ChatOptions(tools: tools)
+)
+
+for try await response in stream {
+    if let toolCalls = response.message.toolCalls {
+        for call in toolCalls {
+            print("Tool: \(call.function.name)")
+            print("Args: \(call.function.arguments)")
+        }
+    }
 }
 ```
 
 ## Contributing
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## Contact
-If you have any questions, feedback, or run into issues, please [open an issue](https://github.com/guitaripod/Swollama/issues) on the GitHub repository.
+Contributions are welcome. Please open an issue first to discuss major changes.
+
+## License
+
+MIT
