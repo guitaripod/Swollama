@@ -87,6 +87,9 @@ extension NetworkingSupport {
         let stream = AsyncThrowingStream<Data, Error> { continuation in
             Task { [tempFileURL] in
                 let handle = pipe.fileHandleForReading
+                defer {
+                    try? handle.close()
+                }
                 var headerData = Data()
                 var headersParsed = false
 
@@ -164,9 +167,6 @@ extension NetworkingSupport {
                 if let tempFileURL = tempFileURL {
                     try? FileManager.default.removeItem(at: tempFileURL)
                 }
-
-
-                try? handle.close()
 
                 if process.terminationStatus != 0 {
                     continuation.finish(throwing: URLError(.unknown))
