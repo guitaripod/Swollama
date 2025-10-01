@@ -41,7 +41,6 @@ let package = Package(
         .executableTarget(
             name: "SwollamaCLI",
             dependencies: ["Swollama"],
-            resources: [.copy("README.md")],
             swiftSettings: linuxSwiftSettings,
             linkerSettings: linuxLinkerSettings),
         .testTarget(
