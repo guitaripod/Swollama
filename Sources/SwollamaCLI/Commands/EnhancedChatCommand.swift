@@ -394,6 +394,12 @@ class EnhancedChatCommand: CommandProtocol {
                 printError("Error decoding response: \(error.localizedDescription)")
             case .unexpectedStatusCode(let code):
                 printError("Unexpected status code: \(code)")
+            case .httpError(let statusCode, let message):
+                if let message = message {
+                    printError("HTTP error \(statusCode): \(message)")
+                } else {
+                    printError("HTTP error \(statusCode)")
+                }
             case .cancelled:
                 printWarning("Request cancelled")
             case .fileError(let message):

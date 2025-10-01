@@ -35,6 +35,11 @@ public enum OllamaError: LocalizedError {
     /// Contains the status code that was received.
     case unexpectedStatusCode(Int)
 
+    /// An HTTP error occurred during a web request.
+    ///
+    /// Contains the HTTP status code and optional error message.
+    case httpError(statusCode: Int, message: String? = nil)
+
     /// The request parameters were invalid or malformed.
     ///
     /// Contains a description of what was invalid.
@@ -47,15 +52,29 @@ public enum OllamaError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidResponse: "The server returned an invalid response"
-        case .decodingError(let error): "Failed to decode response: \(error.localizedDescription)"
-        case .serverError(let message): "Server error: \(message)"
-        case .modelNotFound: "The requested model was not found"
-        case .cancelled: "The operation was cancelled"
-        case .networkError(let error): "Network error: \(error.localizedDescription)"
-        case .unexpectedStatusCode(let code): "Unexpected status code: \(code)"
-        case .invalidParameters(let message): "Invalid parameters: \(message)"
-        case .fileError(let message): "File error: \(message)"
+        case .invalidResponse:
+            return "The server returned an invalid response"
+        case .decodingError(let error):
+            return "Failed to decode response: \(error.localizedDescription)"
+        case .serverError(let message):
+            return "Server error: \(message)"
+        case .modelNotFound:
+            return "The requested model was not found"
+        case .cancelled:
+            return "The operation was cancelled"
+        case .networkError(let error):
+            return "Network error: \(error.localizedDescription)"
+        case .unexpectedStatusCode(let code):
+            return "Unexpected status code: \(code)"
+        case .httpError(let statusCode, let message):
+            if let message = message {
+                return "HTTP error \(statusCode): \(message)"
+            }
+            return "HTTP error \(statusCode)"
+        case .invalidParameters(let message):
+            return "Invalid parameters: \(message)"
+        case .fileError(let message):
+            return "File error: \(message)"
         }
     }
 }

@@ -123,6 +123,12 @@ struct GenerateCommand: CommandProtocol {
                         "Error decoding response: \(error.localizedDescription)"
                     case .unexpectedStatusCode(let code):
                         "Unexpected status code: \(code)"
+                    case .httpError(let statusCode, let message):
+                        if let message = message {
+                            "HTTP error \(statusCode): \(message)"
+                        } else {
+                            "HTTP error \(statusCode)"
+                        }
                     case .cancelled:
                         "Cancelled"
                     case .fileError(_):
