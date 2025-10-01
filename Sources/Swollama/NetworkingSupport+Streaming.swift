@@ -189,11 +189,12 @@ extension NetworkingSupport {
         }
 
 
-        for _ in 0..<100 {
+        for attempt in 0..<20 {
             if let response = await responseHolder.getResponse() {
                 return (stream, response as URLResponse)
             }
-            try await Task.sleep(for: .milliseconds(50))
+            let delay = min(50, 1 << attempt)
+            try await Task.sleep(for: .milliseconds(UInt64(delay)))
         }
 
         guard let fallbackResponse = HTTPURLResponse(
