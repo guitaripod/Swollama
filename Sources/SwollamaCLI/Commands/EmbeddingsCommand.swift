@@ -149,7 +149,7 @@ private enum OutputFormat: String {
     private func displayCSV(_ response: EmbeddingResponse) {
         print("# Embeddings CSV Output")
         print("# Model: \(response.model)")
-        print("# Total Duration: \(response.totalDuration)ns")
+        print("# Total Duration: \(response.totalDuration ?? 0)ns")
         print("# Dimensions: \(response.embeddings.first?.count ?? 0)")
         print("")
 
@@ -163,9 +163,9 @@ private enum OutputFormat: String {
         print("Model: \(response.model)")
         print("Embeddings: \(response.embeddings.count)")
         print("Dimensions: \(response.embeddings.first?.count ?? 0)")
-        print("Total Duration: \(response.totalDuration)ns")
-        print("Load Duration: \(response.loadDuration)ns")
-        print("Prompt Eval Count: \(response.promptEvalCount)")
+        print("Total Duration: \(response.totalDuration ?? 0)ns")
+        print("Load Duration: \(response.loadDuration ?? 0)ns")
+        print("Prompt Eval Count: \(response.promptEvalCount ?? 0)")
         print("")
 
         for (index, embedding) in response.embeddings.enumerated() {
