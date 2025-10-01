@@ -53,6 +53,8 @@ for try await response in try await client.chat(messages: messages, model: model
 
 **Error types**: Use `OllamaError` for library, `CLIError` for CLI
 
+**Code style**: Never add code comments
+
 **Tools**: Use the latest tools available
 
 ## Testing
