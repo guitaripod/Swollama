@@ -96,10 +96,6 @@ class InputHandler {
         var termios = termios()
         tcgetattr(STDIN_FILENO, &termios)
 
-
-        var originalTermios = termios
-
-
         termios.c_lflag &= ~(tcflag_t(ECHO | ICANON))
         tcsetattr(STDIN_FILENO, TCSANOW, &termios)
 
