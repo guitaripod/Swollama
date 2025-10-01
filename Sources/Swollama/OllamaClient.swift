@@ -76,6 +76,22 @@ public actor OllamaClient: OllamaProtocol {
         self.encoder.dateEncodingStrategy = .iso8601
     }
 
+    init(
+        baseURL: URL,
+        configuration: OllamaConfiguration,
+        session: URLSession
+    ) {
+        self.baseURL = baseURL
+        self.configuration = configuration
+        self.session = session
+
+        self.decoder = JSONDecoder()
+        self.decoder.dateDecodingStrategy = .iso8601
+
+        self.encoder = JSONEncoder()
+        self.encoder.dateEncodingStrategy = .iso8601
+    }
+
 
 
 
