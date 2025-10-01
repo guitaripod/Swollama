@@ -3,15 +3,63 @@ import FoundationNetworking
 #endif
 import Foundation
 
-
+/// A thread-safe client for interacting with the Ollama API.
+///
+/// `OllamaClient` is an actor that provides a comprehensive Swift interface to the Ollama API,
+/// enabling text generation, chat completions, embeddings, and model management operations.
+/// All methods are `async` and automatically serialized through the actor's isolation domain,
+/// ensuring thread-safe access.
+///
+/// ## Overview
+///
+/// The client supports all major Ollama API operations:
+/// - Text generation with streaming responses
+/// - Chat completions with tool support
+/// - Vector embeddings generation
+/// - Model management (list, pull, push, delete, copy)
+/// - Running model inspection
+/// - Blob management for custom models
+///
+/// ## Platform Support
+///
+/// The client works on both macOS and Linux:
+/// - **macOS/iOS**: Uses native `URLSession.bytes(for:)` for streaming
+/// - **Linux**: Uses curl subprocess for HTTP streaming due to Foundation limitations
+///
+/// ## Example
+///
+/// ```swift
+/// let client = OllamaClient()
+///
+/// guard let model = OllamaModelName.parse("llama3.2") else {
+///     throw OllamaError.invalidParameters("Invalid model name")
+/// }
+///
+/// for try await response in try await client.generateText(
+///     prompt: "Tell me a joke",
+///     model: model
+/// ) {
+///     print(response.response, terminator: "")
+/// }
+/// ```
+///
+/// - Note: As an actor, all method calls to `OllamaClient` must use `await`.
 public actor OllamaClient: OllamaProtocol {
+    /// The base URL for the Ollama API server.
     public let baseURL: URL
+
+    /// Configuration settings for the client including timeouts, retries, and keep-alive behavior.
     public nonisolated let configuration: OllamaConfiguration
 
     private let session: URLSession
     let decoder: JSONDecoder
     private let encoder: JSONEncoder
 
+    /// Creates a new Ollama client.
+    ///
+    /// - Parameters:
+    ///   - baseURL: The base URL of the Ollama server. Defaults to `http://localhost:11434`.
+    ///   - configuration: Client configuration including timeouts and retry behavior. Defaults to ``OllamaConfiguration/default``.
     public init(baseURL: URL = URL(string: "http://localhost:11434")!, configuration: OllamaConfiguration = .default) {
         self.baseURL = baseURL
         self.configuration = configuration
@@ -201,6 +249,11 @@ public actor OllamaClient: OllamaProtocol {
 
 
 
+    /// Encodes a value to JSON data.
+    ///
+    /// - Parameter value: The encodable value to convert to JSON.
+    /// - Returns: The JSON-encoded data.
+    /// - Throws: ``OllamaError/invalidParameters(_:)`` if encoding fails.
     public func encode<T: Encodable>(_ value: T) throws -> Data {
         do {
             return try encoder.encode(value)
@@ -209,12 +262,13 @@ public actor OllamaClient: OllamaProtocol {
         }
     }
 
-
-
-
-
-
-
+    /// Decodes JSON data to a specified type.
+    ///
+    /// - Parameters:
+    ///   - data: The JSON data to decode.
+    ///   - type: The type to decode to.
+    /// - Returns: The decoded value.
+    /// - Throws: ``OllamaError/decodingError(_:)`` if decoding fails.
     public func decode<T: Decodable>(_ data: Data, as type: T.Type) throws -> T {
         do {
             return try decoder.decode(type, from: data)
