@@ -7,44 +7,49 @@ import Swollama
 @main
 struct SwollamaCLI {
     static func main() async throws {
-        // Initialize Linux-specific optimizations
+
         #if os(Linux)
         LinuxSupport.installSignalHandlers()
         LinuxSupport.configureMemorySettings()
         LinuxSupport.configureProcessPriority()
         #endif
-        
-        // Get command line arguments
+
+
         var arguments = CommandLine.arguments
-        // Remove the executable name
+
         arguments.removeFirst()
 
-        // Check for help flags before other parsing
+
         if arguments.contains("--help") || arguments.contains("-h") || arguments.contains("help") {
             printUsage()
             return
         }
-        
-        // Check for version flag
+
+
         if arguments.contains("--version") || arguments.contains("-v") {
             printVersion()
             return
         }
-        
-        // Check for system info flag (Linux diagnostic feature)
+
+
         if arguments.contains("--system-info") {
             printSystemInfo()
             return
         }
 
-        // Parse host option first
+
         let baseURL: URL
         if let hostIndex = arguments.firstIndex(of: "--host"),
            hostIndex + 1 < arguments.count {
-            baseURL = URL(string: arguments[hostIndex + 1])!
-            // Remove the --host and its value from arguments
+            guard let url = URL(string: arguments[hostIndex + 1]) else {
+                print("Error: Invalid URL '\(arguments[hostIndex + 1])'")
+                exit(1)
+            }
+            baseURL = url
+
             arguments.removeSubrange(hostIndex...hostIndex+1)
         } else {
+
             baseURL = URL(string: "http://localhost:11434")!
         }
 
@@ -108,13 +113,13 @@ struct SwollamaCLI {
     static func printUsage() {
         print("""
         Usage: swollama [options] <command> [arguments]
-        
+
         Options:
           --host <url>            Ollama API host (default: http://localhost:11434)
           --version, -v           Show version information
           --system-info           Display system information (Linux)
           --help, -h              Show this help message
-        
+
         Commands:
           list                     List available models
           show <model>            Show model information
@@ -131,7 +136,7 @@ struct SwollamaCLI {
           blob <subcommand>       Manage blobs (check/push)
           test [type]             Test new API features
           help                    Show this help message
-        
+
         Examples:
           swollama list
           swollama --host http://remote:11434 list
@@ -142,13 +147,13 @@ struct SwollamaCLI {
           swollama embeddings "Hello world"
           swollama test structured
           swollama version
-        
+
         Linux Users:
           - See linux/README.md for deployment guide
           - Use --system-info for diagnostics
         """)
     }
-    
+
     static func printVersion() {
         print("""
         Swollama v1.0.0
@@ -156,14 +161,14 @@ struct SwollamaCLI {
         Swift: 5.9+
         """)
     }
-    
+
     static func printSystemInfo() {
         print("""
         Swollama System Information
         ==========================
-        
+
         \(LinuxSupport.getSystemInfo())
-        
+
         Performance Settings:
         - Network buffer size: 64KB
         - Terminal update rate: 10 FPS
@@ -172,7 +177,7 @@ struct SwollamaCLI {
         - Memory optimization: Active
         """)
     }
-    
+
     static func getPlatformName() -> String {
         #if os(Linux)
         return "Linux"

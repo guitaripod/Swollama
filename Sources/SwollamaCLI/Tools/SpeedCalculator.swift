@@ -16,9 +16,9 @@ final class MovingAverageSpeedCalculator: SpeedCalculator {
             now.timeIntervalSince($0.timestamp) <= speedWindowSeconds
         }
 
-        guard speedReadings.count >= 2 else { return 0.0 }
+        guard speedReadings.count >= 2,
+              let oldest = speedReadings.first else { return 0.0 }
 
-        let oldest = speedReadings.first!
         let timeSpan = now.timeIntervalSince(oldest.timestamp)
         let byteSpan = Double(bytes - oldest.bytes)
         return timeSpan > 0 ? byteSpan / timeSpan : 0
