@@ -46,17 +46,24 @@ public struct ChatRequest: Codable, Sendable {
 }
 
 
+/// A message in a chat conversation.
+///
+/// Represents a single message with a role (system, user, assistant, or tool), text content,
+/// and optional attachments like images or tool call information.
 public struct ChatMessage: Codable, Sendable {
-
+    /// The role of the message sender.
     public let role: MessageRole
 
+    /// The text content of the message.
     public let content: String
 
-
+    /// Optional base64-encoded images attached to the message (for multimodal models).
     public let images: [String]?
 
+    /// Tool calls made by the assistant (for function calling).
     public let toolCalls: [ToolCall]?
 
+    /// Extended thinking/reasoning content (for reasoning models with `think` enabled).
     public let thinking: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -80,9 +87,14 @@ public struct ChatMessage: Codable, Sendable {
 }
 
 
+/// The role of a message sender in a chat conversation.
 public enum MessageRole: String, Codable, Sendable {
+    /// System message defining assistant behavior and context.
     case system
+    /// User message containing prompts or questions.
     case user
+    /// Assistant message containing model responses.
     case assistant
+    /// Tool message containing function call results.
     case tool
 }

@@ -6,18 +6,26 @@ struct ModelsResponse: Codable {
 }
 
 
+/// Information about an available model.
+///
+/// Represents a model entry from the list models response.
 public struct ModelListEntry: Codable, Sendable {
-
+    /// The model's name in full format (e.g., "llama3.2:latest").
     public let name: String
 
+    /// The model identifier (same as name in current implementation).
     public let model: String
 
+    /// When the model was last modified.
     public let modifiedAt: Date
 
+    /// Total size of the model in bytes.
     public let size: UInt64
 
+    /// The model's digest/hash.
     public let digest: String
 
+    /// Detailed model information including format, family, and parameters.
     public let details: ModelDetails
 
     private enum CodingKeys: String, CodingKey {
@@ -61,18 +69,26 @@ public struct ModelListEntry: Codable, Sendable {
 }
 
 
+/// Detailed information about a model.
+///
+/// Contains technical details about the model's architecture and configuration.
 public struct ModelDetails: Codable, Sendable {
-
+    /// The parent model this model is based on.
     public let parentModel: String
 
+    /// The model format (e.g., "gguf").
     public let format: String
 
+    /// The model family (e.g., "llama").
     public let family: String
 
+    /// Additional model families this model belongs to.
     public let families: [String]?
 
+    /// The parameter size (e.g., "3.2B", "7B").
     public let parameterSize: String
 
+    /// The quantization level (e.g., "Q4_K_M", "Q8_0").
     public let quantizationLevel: String
 
     private enum CodingKeys: String, CodingKey {

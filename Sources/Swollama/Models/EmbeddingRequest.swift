@@ -28,8 +28,13 @@ public struct EmbeddingRequest: Codable, Sendable {
 }
 
 
+/// Input for embedding generation.
+///
+/// Can be either a single string or an array of strings to embed in batch.
 public enum EmbeddingInput: Codable, Sendable {
+    /// A single string to embed.
     case single(String)
+    /// Multiple strings to embed in batch.
     case multiple([String])
 
     public func encode(to encoder: Encoder) throws {

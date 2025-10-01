@@ -1,10 +1,13 @@
 import Foundation
 
-
+/// A tool definition for function calling.
+///
+/// Defines a function that the model can call during chat completions.
 public struct ToolDefinition: Codable, Sendable {
-
+    /// The tool type. Always "function" for function calling.
     public let type: String
 
+    /// The function definition including name, description, and parameters.
     public let function: FunctionDefinition
 
     public init(type: String = "function", function: FunctionDefinition) {
@@ -14,12 +17,17 @@ public struct ToolDefinition: Codable, Sendable {
 }
 
 
+/// Definition of a callable function.
+///
+/// Describes a function that the model can invoke, including its name, purpose, and parameters.
 public struct FunctionDefinition: Codable, Sendable {
-
+    /// The function name.
     public let name: String
 
+    /// A description of what the function does.
     public let description: String
 
+    /// The function's parameter schema.
     public let parameters: Parameters
 
     public init(

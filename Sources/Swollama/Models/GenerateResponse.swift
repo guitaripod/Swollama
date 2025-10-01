@@ -1,42 +1,44 @@
 import Foundation
 
-
-
+/// Response from a text generation request.
+///
+/// Contains the model's text response along with metadata about the generation process.
+/// Streamed responses yield multiple instances, with `done` set to `true` on the final chunk.
 public struct GenerateResponse: Codable, Sendable {
-
+    /// The model that generated the response.
     public let model: String
 
-
+    /// Timestamp when the response was created.
     public let createdAt: Date
 
-
+    /// The generated text content.
     public let response: String
 
-
+    /// Whether this is the final chunk in a streamed response.
     public let done: Bool
 
-
+    /// Reason for completion (e.g., "stop", "length"). Only present when `done` is `true`.
     public let doneReason: String?
 
-
+    /// Conversation context for continuing multi-turn interactions. Only present when `done` is `true`.
     public let context: [Int]?
 
-
+    /// Total time taken for the request in nanoseconds. Only present when `done` is `true`.
     public let totalDuration: UInt64?
 
-
+    /// Time taken to load the model in nanoseconds. Only present when `done` is `true`.
     public let loadDuration: UInt64?
 
-
+    /// Number of tokens in the prompt. Only present when `done` is `true`.
     public let promptEvalCount: Int?
 
-
+    /// Time taken to process the prompt in nanoseconds. Only present when `done` is `true`.
     public let promptEvalDuration: UInt64?
 
-
+    /// Number of tokens generated in the response. Only present when `done` is `true`.
     public let evalCount: Int?
 
-
+    /// Time taken to generate the response in nanoseconds. Only present when `done` is `true`.
     public let evalDuration: UInt64?
 
 

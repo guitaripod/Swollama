@@ -67,10 +67,14 @@ public struct GenerateRequest: Codable, Sendable {
 }
 
 
+/// Response format constraint for model outputs.
+///
+/// Constrains the model to generate responses in a specific format.
 public enum ResponseFormat: Codable, Sendable {
-
+    /// Generate unstructured JSON output.
     case json
 
+    /// Generate structured output conforming to a JSON schema.
     case jsonSchema(JSONSchema)
 
     public init(from decoder: Decoder) throws {
@@ -122,11 +126,24 @@ public enum ResponseFormat: Codable, Sendable {
 
 
 
+/// A JSON Schema definition for structured output.
+///
+/// Defines the structure of JSON output that the model should generate, including
+/// type information, properties, and constraints.
 public struct JSONSchema: Codable, Sendable {
+    /// The JSON type (e.g., "object", "array").
     public let type: String
+
+    /// Property definitions for object types.
     public let properties: [String: JSONSchemaProperty]?
+
+    /// Required property names for object types.
     public let required: [String]?
+
+    /// Item definition for array types.
     public let items: JSONSchemaProperty?
+
+    /// Whether additional properties are allowed for object types.
     public let additionalProperties: JSONSchemaPropertyOrBool?
 
     public init(
