@@ -16,6 +16,9 @@ public struct ChatResponse: Codable, Sendable {
     public let done: Bool
 
 
+    public let doneReason: String?
+
+
     public let totalDuration: UInt64?
 
 
@@ -39,6 +42,7 @@ public struct ChatResponse: Codable, Sendable {
         case createdAt = "created_at"
         case message
         case done
+        case doneReason = "done_reason"
         case totalDuration = "total_duration"
         case loadDuration = "load_duration"
         case promptEvalCount = "prompt_eval_count"
@@ -56,6 +60,7 @@ public struct ChatResponse: Codable, Sendable {
         model = try container.decode(String.self, forKey: .model)
         message = try container.decode(ChatMessage.self, forKey: .message)
         done = try container.decode(Bool.self, forKey: .done)
+        doneReason = try container.decodeIfPresent(String.self, forKey: .doneReason)
         totalDuration = try container.decodeIfPresent(UInt64.self, forKey: .totalDuration)
         loadDuration = try container.decodeIfPresent(UInt64.self, forKey: .loadDuration)
         promptEvalCount = try container.decodeIfPresent(Int.self, forKey: .promptEvalCount)

@@ -158,7 +158,6 @@ public actor OllamaClient: OllamaProtocol {
                     for try await chunk in dataStream {
                         buffer.append(chunk)
 
-
                         while let newlineIndex = buffer.firstIndex(of: newline) {
                             let lineData = buffer[..<newlineIndex]
                             if !lineData.isEmpty {

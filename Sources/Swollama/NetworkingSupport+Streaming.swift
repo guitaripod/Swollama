@@ -108,37 +108,41 @@ extension NetworkingSupport {
                         headerData.append(chunk)
 
 
-                        if let headerString = String(data: headerData, encoding: .utf8),
-                           let range = headerString.range(of: "\r\n\r\n") ?? headerString.range(of: "\n\n") {
+                        let doubleCRLF = Data([13, 10, 13, 10])
+                        let doubleLF = Data([10, 10])
 
-                            let headers = String(headerString[..<range.lowerBound])
-                            headersParsed = true
+                        if let separatorRange = headerData.range(of: doubleCRLF) ?? headerData.range(of: doubleLF) {
+
+                            let headersData = headerData[..<separatorRange.lowerBound]
+                            if let headers = String(data: headersData, encoding: .utf8) {
+                                headersParsed = true
 
 
-                            var statusCode = 200
-                            if let statusLine = headers.split(separator: "\n").first {
-                                let parts = statusLine.split(separator: " ")
-                                if parts.count >= 2, let code = Int(parts[1]) {
-                                    statusCode = code
+                                var statusCode = 200
+                                if let statusLine = headers.split(separator: "\n").first {
+                                    let parts = statusLine.split(separator: " ")
+                                    if parts.count >= 2, let code = Int(parts[1]) {
+                                        statusCode = code
+                                    }
                                 }
-                            }
 
 
-                            if let httpResponse = HTTPURLResponse(
-                                url: url,
-                                statusCode: statusCode,
-                                httpVersion: "HTTP/1.1",
-                                headerFields: parseHeaders(from: headers)
-                            ) {
-                                await responseHolder.setResponse(httpResponse)
-                            }
+                                if let httpResponse = HTTPURLResponse(
+                                    url: url,
+                                    statusCode: statusCode,
+                                    httpVersion: "HTTP/1.1",
+                                    headerFields: parseHeaders(from: headers)
+                                ) {
+                                    await responseHolder.setResponse(httpResponse)
+                                }
 
 
-                            let bodyStartIndex = headerString.distance(from: headerString.startIndex, to: range.upperBound)
-                            if bodyStartIndex < headerData.count {
-                                let bodyData = headerData[bodyStartIndex...]
-                                if !bodyData.isEmpty {
-                                    continuation.yield(Data(bodyData))
+                                let bodyStartIndex = separatorRange.upperBound
+                                if bodyStartIndex < headerData.count {
+                                    let bodyData = headerData[bodyStartIndex...]
+                                    if !bodyData.isEmpty {
+                                        continuation.yield(Data(bodyData))
+                                    }
                                 }
                             }
                         }
