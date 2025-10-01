@@ -82,6 +82,8 @@ struct SwollamaCLI {
                 try await DeleteModelCommand(client: client).execute(with: remainingArgs)
             case "chat":
                 try await EnhancedChatCommand(client: client).execute(with: remainingArgs)
+            case "agent":
+                try await AgentCommand().execute(with: remainingArgs)
             case "generate":
                 try await GenerateCommand(client: client).execute(with: remainingArgs)
             case "embeddings", "embed":
@@ -129,6 +131,7 @@ struct SwollamaCLI {
           copy <src> <dst>        Create a copy of a model
           delete <model>          Remove a model
           chat [model]            Start a chat session
+          agent <query>           Run an agentic workflow with web search
           generate [model]        Generate text from a prompt
           embeddings <text>       Generate embeddings for text
           ps                      List running models
@@ -141,6 +144,7 @@ struct SwollamaCLI {
           swollama list
           swollama --host http://remote:11434 list
           swollama chat llama3.2
+          swollama agent "what is ollama's new engine"
           swollama generate codellama
           swollama pull llama3.2
           swollama create mario --from llama3.2 --system "You are Mario"
