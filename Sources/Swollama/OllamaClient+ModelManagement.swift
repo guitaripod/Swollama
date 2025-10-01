@@ -106,6 +106,7 @@ extension OllamaClient {
     }
 
     public func checkBlobExists(digest: String) async throws -> Bool {
+        try validateDigest(digest)
         do {
             _ = try await makeRequest(
                 endpoint: "blobs/\(digest)",
@@ -124,11 +125,22 @@ extension OllamaClient {
     }
 
     public func pushBlob(digest: String, data: Data) async throws {
+        try validateDigest(digest)
         _ = try await makeRequest(
             endpoint: "blobs/\(digest)",
             method: "POST",
             body: data
         )
+    }
+
+    private func validateDigest(_ digest: String) throws {
+        let pattern = "^(sha256|sha512):[a-f0-9]{64,128}$"
+        let regex = try NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+        let range = NSRange(digest.startIndex..<digest.endIndex, in: digest)
+
+        guard regex.firstMatch(in: digest, options: [], range: range) != nil else {
+            throw OllamaError.invalidParameters("Invalid digest format. Expected format: sha256:<hex> or sha512:<hex>")
+        }
     }
 
     public func getVersion() async throws -> VersionResponse {
