@@ -2,9 +2,9 @@
 
 <img src="https://github.com/user-attachments/assets/bcad3675-5c0f-47aa-b4d2-ff2ebec54437" alt="swollama-logo-small" width="256" height="256" />
 
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fmarcusziade%2FSwollama%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/marcusziade/Swollama)
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fmarcusziade%2FSwollama%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/marcusziade/Swollama)
-[![Documentation](https://img.shields.io/badge/Documentation-DocC-blue)](https://marcusziade.github.io/Swollama/documentation/swollama/)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fguitaripod%2FSwollama%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/guitaripod/Swollama)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fguitaripod%2FSwollama%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/guitaripod/Swollama)
+[![Documentation](https://img.shields.io/badge/Documentation-DocC-blue)](https://guitaripod.github.io/Swollama/documentation/swollama/)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 A comprehensive, protocol-oriented Swift client for the Ollama API. This package provides a type-safe way to interact with Ollama's machine learning models, supporting all API endpoints with native Swift concurrency.
@@ -41,13 +41,13 @@ A comprehensive, protocol-oriented Swift client for the Ollama API. This package
 Add Swollama to your Swift package dependencies in `Package.swift`:
 ```swift
 dependencies: [
-    .package(url: "https://github.com/marcusziade/Swollama.git", from: "1.0.0")
+    .package(url: "https://github.com/guitaripod/Swollama.git", from: "1.0.0")
 ]
 ```
 
 Or add it through Xcode:
 1. File > Add Package Dependencies
-2. Enter the repository URL: `https://github.com/marcusziade/Swollama.git`
+2. Enter the repository URL: `https://github.com/guitaripod/Swollama.git`
 
 ## Quick Start
 ```swift
@@ -122,7 +122,7 @@ swollama ps
 ```
 
 ## Documentation
-For complete API documentation, usage examples, and best practices, visit the [Documentation](https://marcusziade.github.io/Swollama/documentation/swollama/).
+For complete API documentation, usage examples, and best practices, visit the [Documentation](https://guitaripod.github.io/Swollama/documentation/swollama/).
 
 ## Examples
 
@@ -159,4 +159,4 @@ for try await response in responses {
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Contact
-If you have any questions, feedback, or run into issues, please [open an issue](https://github.com/marcusziade/Swollama/issues) on the GitHub repository.
+If you have any questions, feedback, or run into issues, please [open an issue](https://github.com/guitaripod/Swollama/issues) on the GitHub repository.

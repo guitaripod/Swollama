@@ -756,9 +756,9 @@ All Ollama API endpoints are fully supported:
 ## 🔗 Additional Resources
 
 - **Official API Documentation**: https://github.com/ollama/ollama/blob/main/docs/api.md
-- **Package Documentation**: https://marcusziade.github.io/Swollama/documentation/swollama/
-- **GitHub Repository**: https://github.com/marcusziade/Swollama
-- **Swift Package Index**: https://swiftpackageindex.com/marcusziade/Swollama
+- **Package Documentation**: https://guitaripod.github.io/Swollama/documentation/swollama/
+- **GitHub Repository**: https://github.com/guitaripod/Swollama
+- **Swift Package Index**: https://swiftpackageindex.com/guitaripod/Swollama
 
 ---
 
