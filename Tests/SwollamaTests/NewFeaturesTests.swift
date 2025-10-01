@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import Swollama
 
 final class NewFeaturesTests: XCTestCase {
@@ -18,17 +19,15 @@ final class NewFeaturesTests: XCTestCase {
                     type: "object",
                     properties: [
                         "created": JSONSchemaProperty(type: "string"),
-                        "version": JSONSchemaProperty(type: "integer")
+                        "version": JSONSchemaProperty(type: "integer"),
                     ]
-                )
+                ),
             ],
             required: ["name", "age"]
         )
 
-
         let jsonFormat = ResponseFormat.json
         let schemaFormat = ResponseFormat.jsonSchema(schema)
-
 
         XCTAssertNotNil(jsonFormat)
         XCTAssertNotNil(schemaFormat)
@@ -43,7 +42,6 @@ final class NewFeaturesTests: XCTestCase {
         )
         XCTAssertEqual(generateRequest.think, true)
 
-
         let chatRequest = ChatRequest(
             model: "deepseek-r1",
             messages: [
@@ -52,7 +50,6 @@ final class NewFeaturesTests: XCTestCase {
             think: true
         )
         XCTAssertEqual(chatRequest.think, true)
-
 
         let messageWithThinking = ChatMessage(
             role: .assistant,
@@ -72,7 +69,6 @@ final class NewFeaturesTests: XCTestCase {
         XCTAssertEqual(basicRequest.model, "custom-model")
         XCTAssertEqual(basicRequest.from, "llama3.2")
 
-
         let quantizeRequest = CreateModelRequest(
             model: "llama3.2:q4",
             from: "llama3.2:fp16",
@@ -80,13 +76,11 @@ final class NewFeaturesTests: XCTestCase {
         )
         XCTAssertEqual(quantizeRequest.quantize, .q4_K_M)
 
-
         let ggufRequest = CreateModelRequest(
             model: "my-gguf",
             files: ["model.gguf": "sha256:abc123..."]
         )
         XCTAssertNotNil(ggufRequest.files)
-
 
         let params = ModelfileParameters(
             temperature: 0.7,
@@ -126,7 +120,6 @@ final class NewFeaturesTests: XCTestCase {
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
 
-
         let singleLicense = StringOrArray.string("MIT")
         let singleData = try encoder.encode(singleLicense)
         let decodedSingle = try decoder.decode(StringOrArray.self, from: singleData)
@@ -137,7 +130,6 @@ final class NewFeaturesTests: XCTestCase {
         case .array:
             XCTFail("Expected string, got array")
         }
-
 
         let multiLicense = StringOrArray.array(["MIT", "Apache-2.0"])
         let multiData = try encoder.encode(multiLicense)
@@ -155,7 +147,6 @@ final class NewFeaturesTests: XCTestCase {
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
 
-
         let boolValue = JSONSchemaPropertyOrBool.bool(true)
         let boolData = try encoder.encode(boolValue)
         let decodedBool = try decoder.decode(JSONSchemaPropertyOrBool.self, from: boolData)
@@ -166,7 +157,6 @@ final class NewFeaturesTests: XCTestCase {
         case .property:
             XCTFail("Expected bool, got property")
         }
-
 
         let prop = JSONSchemaProperty(type: "string")
         let propValue = JSONSchemaPropertyOrBool.property(prop)
@@ -195,14 +185,12 @@ final class NewFeaturesTests: XCTestCase {
         )
         XCTAssertEqual(suffixRequest.suffix, "\n\nprint(hello())")
 
-
         let rawRequest = GenerateRequest(
             model: "mistral",
             prompt: "[INST] Hello [/INST]",
             raw: true
         )
         XCTAssertEqual(rawRequest.raw, true)
-
 
         let imageRequest = GenerateRequest(
             model: "llava",

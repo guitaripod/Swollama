@@ -1,14 +1,12 @@
 import Foundation
 import Swollama
 
-
 @main
 struct StreamingTest {
     static func main() async throws {
         print("🚀 Testing Ollama streaming...")
 
         let client = OllamaClient(configuration: .default)
-
 
         let model = OllamaModelName(namespace: nil, name: "llama2", tag: "latest")
         let messages = [

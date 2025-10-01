@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 struct EmbeddingsCommand: CommandProtocol {
     private let client: OllamaProtocol
 
@@ -13,7 +12,6 @@ struct EmbeddingsCommand: CommandProtocol {
         guard arguments.count >= 1 else {
             throw CLIError.missingArgument("text or texts to embed")
         }
-
 
         var modelName = "all-minilm"
         var truncate = true
@@ -91,30 +89,32 @@ struct EmbeddingsCommand: CommandProtocol {
     }
 
     private func printEmbeddingsHelp() {
-        print("""
-        Usage: swollama embeddings <text1> [text2 ...] [options]
+        print(
+            """
+            Usage: swollama embeddings <text1> [text2 ...] [options]
 
-        Generate embeddings for one or more texts.
+            Generate embeddings for one or more texts.
 
-        Options:
-            --model, -m <model>     Model to use (default: all-minilm)
-            --no-truncate           Don't truncate inputs
-            --format, -f <format>   Output format: json, csv, raw (default: json)
-            --help, -h              Show this help message
+            Options:
+                --model, -m <model>     Model to use (default: all-minilm)
+                --no-truncate           Don't truncate inputs
+                --format, -f <format>   Output format: json, csv, raw (default: json)
+                --help, -h              Show this help message
 
-        Examples:
-            # Generate embeddings for a single text
-            swollama embeddings "Why is the sky blue?"
+            Examples:
+                # Generate embeddings for a single text
+                swollama embeddings "Why is the sky blue?"
 
-            # Generate embeddings for multiple texts
-            swollama embeddings "Hello world" "How are you?" "Goodbye"
+                # Generate embeddings for multiple texts
+                swollama embeddings "Hello world" "How are you?" "Goodbye"
 
-            # Use a specific model
-            swollama embeddings "Test text" --model mxbai-embed-large
+                # Use a specific model
+                swollama embeddings "Test text" --model mxbai-embed-large
 
-            # Output as CSV
-            swollama embeddings "Sample text" --format csv
-        """)
+                # Output as CSV
+                swollama embeddings "Sample text" --format csv
+            """
+        )
     }
 }
 
@@ -170,7 +170,9 @@ private enum OutputFormat: String {
 
         for (index, embedding) in response.embeddings.enumerated() {
             print("Embedding \(index):")
-            print("First 10 values: \(embedding.prefix(10).map { String(format: "%.6f", $0) }.joined(separator: ", "))")
+            print(
+                "First 10 values: \(embedding.prefix(10).map { String(format: "%.6f", $0) }.joined(separator: ", "))"
+            )
             print("")
         }
     }

@@ -31,11 +31,6 @@ public struct OllamaModelName {
     /// The model's tag/version (e.g., "latest", "7b-instruct"). Defaults to "latest".
     public let tag: String
 
-
-
-
-
-
     /// Creates a model name with the specified components.
     ///
     /// - Parameters:
@@ -71,7 +66,6 @@ public struct OllamaModelName {
             return nil
         }
     }
-
 
     /// The complete model name string in Ollama format.
     ///

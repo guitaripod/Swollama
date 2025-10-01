@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import Swollama
 
 final class ConfigurationTests: XCTestCase {

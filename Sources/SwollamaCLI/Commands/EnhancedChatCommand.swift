@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 enum EnhancedTerminalStyle {
     static let reset = "\u{001B}[0m"
     static let bold = "\u{001B}[1m"
@@ -9,7 +8,6 @@ enum EnhancedTerminalStyle {
     static let italic = "\u{001B}[3m"
     static let underline = "\u{001B}[4m"
     static let blink = "\u{001B}[5m"
-
 
     static let neonPink = "\u{001B}[38;2;255;20;147m"
     static let neonBlue = "\u{001B}[38;2;0;255;255m"
@@ -21,13 +19,11 @@ enum EnhancedTerminalStyle {
     static let white = "\u{001B}[38;2;255;255;255m"
     static let gray = "\u{001B}[38;2;169;169;169m"
 
-
     static let bgDark = "\u{001B}[48;2;25;25;35m"
     static let bgSuccess = "\u{001B}[48;2;0;100;0m"
     static let bgError = "\u{001B}[48;2;139;0;0m"
     static let bgWarning = "\u{001B}[48;2;255;140;0m"
 }
-
 
 struct ChatConfiguration {
     var autoSave: Bool = false
@@ -40,13 +36,11 @@ struct ChatConfiguration {
     var typingDelay: TimeInterval = 0.0
 }
 
-
 enum CommandResult {
     case `continue`
     case exit
     case error(String)
 }
-
 
 class EnhancedChatCommand: CommandProtocol {
     private let client: OllamaProtocol
@@ -64,8 +58,6 @@ class EnhancedChatCommand: CommandProtocol {
         self.timeFormatter.dateFormat = "HH:mm:ss"
     }
 
-
-
     private func printHeader(model: OllamaModelName) {
         let width = 60
         let modelText = " Model: \(model.fullName) "
@@ -73,34 +65,71 @@ class EnhancedChatCommand: CommandProtocol {
         let leftPad = String(repeating: "═", count: padding)
         let rightPad = String(repeating: "═", count: width - modelText.count - 2 - padding)
 
-        print("\n\(EnhancedTerminalStyle.neonBlue)╔\(String(repeating: "═", count: width))╗\(EnhancedTerminalStyle.reset)")
-        print("\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(String(repeating: " ", count: width))\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)")
-        print("\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(leftPad)\(EnhancedTerminalStyle.neonGreen)\(modelText)\(EnhancedTerminalStyle.neonPink)\(rightPad)\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)")
-        print("\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(String(repeating: " ", count: width))\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)")
-        print("\(EnhancedTerminalStyle.neonBlue)╚\(String(repeating: "═", count: width))╝\(EnhancedTerminalStyle.reset)\n")
+        print(
+            "\n\(EnhancedTerminalStyle.neonBlue)╔\(String(repeating: "═", count: width))╗\(EnhancedTerminalStyle.reset)"
+        )
+        print(
+            "\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(String(repeating: " ", count: width))\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)"
+        )
+        print(
+            "\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(leftPad)\(EnhancedTerminalStyle.neonGreen)\(modelText)\(EnhancedTerminalStyle.neonPink)\(rightPad)\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)"
+        )
+        print(
+            "\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.neonPink)\(String(repeating: " ", count: width))\(EnhancedTerminalStyle.neonBlue)║\(EnhancedTerminalStyle.reset)"
+        )
+        print(
+            "\(EnhancedTerminalStyle.neonBlue)╚\(String(repeating: "═", count: width))╝\(EnhancedTerminalStyle.reset)\n"
+        )
 
         printCommands()
     }
 
     private func printCommands() {
-        print("\(EnhancedTerminalStyle.mutedPurple)Available Commands:\(EnhancedTerminalStyle.reset)")
-        print("  \(EnhancedTerminalStyle.neonYellow)/exit, /quit\(EnhancedTerminalStyle.gray) - End conversation")
-        print("  \(EnhancedTerminalStyle.neonYellow)/clear\(EnhancedTerminalStyle.gray) - Clear conversation history")
-        print("  \(EnhancedTerminalStyle.neonYellow)/save [filename]\(EnhancedTerminalStyle.gray) - Save conversation")
-        print("  \(EnhancedTerminalStyle.neonYellow)/load [filename]\(EnhancedTerminalStyle.gray) - Load conversation")
-        print("  \(EnhancedTerminalStyle.neonYellow)/system <message>\(EnhancedTerminalStyle.gray) - Set system message")
-        print("  \(EnhancedTerminalStyle.neonYellow)/model <name>\(EnhancedTerminalStyle.gray) - Switch model")
-        print("  \(EnhancedTerminalStyle.neonYellow)/retry\(EnhancedTerminalStyle.gray) - Retry last message")
-        print("  \(EnhancedTerminalStyle.neonYellow)/undo\(EnhancedTerminalStyle.gray) - Remove last exchange")
-        print("  \(EnhancedTerminalStyle.neonYellow)/tokens\(EnhancedTerminalStyle.gray) - Toggle token count display")
-        print("  \(EnhancedTerminalStyle.neonYellow)/help\(EnhancedTerminalStyle.gray) - Show this help")
-        print("\(EnhancedTerminalStyle.neonBlue)═══════════════════════════════════════════════════════════\(EnhancedTerminalStyle.reset)\n")
+        print(
+            "\(EnhancedTerminalStyle.mutedPurple)Available Commands:\(EnhancedTerminalStyle.reset)"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/exit, /quit\(EnhancedTerminalStyle.gray) - End conversation"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/clear\(EnhancedTerminalStyle.gray) - Clear conversation history"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/save [filename]\(EnhancedTerminalStyle.gray) - Save conversation"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/load [filename]\(EnhancedTerminalStyle.gray) - Load conversation"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/system <message>\(EnhancedTerminalStyle.gray) - Set system message"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/model <name>\(EnhancedTerminalStyle.gray) - Switch model"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/retry\(EnhancedTerminalStyle.gray) - Retry last message"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/undo\(EnhancedTerminalStyle.gray) - Remove last exchange"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/tokens\(EnhancedTerminalStyle.gray) - Toggle token count display"
+        )
+        print(
+            "  \(EnhancedTerminalStyle.neonYellow)/help\(EnhancedTerminalStyle.gray) - Show this help"
+        )
+        print(
+            "\(EnhancedTerminalStyle.neonBlue)═══════════════════════════════════════════════════════════\(EnhancedTerminalStyle.reset)\n"
+        )
     }
 
     private func printTimestamp() {
         guard configuration.showTimestamps else { return }
         let timestamp = timeFormatter.string(from: Date())
-        print("\(EnhancedTerminalStyle.dim)[\(timestamp)]\(EnhancedTerminalStyle.reset) ", terminator: "")
+        print(
+            "\(EnhancedTerminalStyle.dim)[\(timestamp)]\(EnhancedTerminalStyle.reset) ",
+            terminator: ""
+        )
     }
 
     private func clearScreen() {
@@ -108,27 +137,38 @@ class EnhancedChatCommand: CommandProtocol {
     }
 
     private func printError(_ message: String) {
-        print("\n\(EnhancedTerminalStyle.bgError)\(EnhancedTerminalStyle.white) ERROR \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.red)\(message)\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.bgError)\(EnhancedTerminalStyle.white) ERROR \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.red)\(message)\(EnhancedTerminalStyle.reset)"
+        )
     }
 
     private func printSuccess(_ message: String) {
-        print("\n\(EnhancedTerminalStyle.bgSuccess)\(EnhancedTerminalStyle.white) SUCCESS \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.neonGreen)\(message)\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.bgSuccess)\(EnhancedTerminalStyle.white) SUCCESS \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.neonGreen)\(message)\(EnhancedTerminalStyle.reset)"
+        )
     }
 
     private func printWarning(_ message: String) {
-        print("\n\(EnhancedTerminalStyle.bgWarning)\(EnhancedTerminalStyle.white) WARNING \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.orange)\(message)\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.bgWarning)\(EnhancedTerminalStyle.white) WARNING \(EnhancedTerminalStyle.reset) \(EnhancedTerminalStyle.orange)\(message)\(EnhancedTerminalStyle.reset)"
+        )
     }
 
     private func printTypingIndicator() {
-        print("\(EnhancedTerminalStyle.dim)\(configuration.streamingIndicator)\(EnhancedTerminalStyle.reset)", terminator: "")
+        print(
+            "\(EnhancedTerminalStyle.dim)\(configuration.streamingIndicator)\(EnhancedTerminalStyle.reset)",
+            terminator: ""
+        )
         fflush(stdout)
 
         print("\r", terminator: "")
     }
 
-
-
-    private func processCommand(_ input: String, messages: inout [ChatMessage], model: inout OllamaModelName) -> CommandResult {
+    private func processCommand(
+        _ input: String,
+        messages: inout [ChatMessage],
+        model: inout OllamaModelName
+    ) -> CommandResult {
         let parts = input.split(separator: " ", maxSplits: 1)
         guard !parts.isEmpty else { return .continue }
 
@@ -218,10 +258,9 @@ class EnhancedChatCommand: CommandProtocol {
         }
     }
 
-
-
     private func saveConversation(messages: [ChatMessage], filename: String) -> CommandResult {
-        let actualFilename = filename.isEmpty ? "chat_\(Date().timeIntervalSince1970).json" : filename
+        let actualFilename =
+            filename.isEmpty ? "chat_\(Date().timeIntervalSince1970).json" : filename
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
 
@@ -237,7 +276,8 @@ class EnhancedChatCommand: CommandProtocol {
         return .continue
     }
 
-    private func loadConversation(messages: inout [ChatMessage], filename: String) -> CommandResult {
+    private func loadConversation(messages: inout [ChatMessage], filename: String) -> CommandResult
+    {
         guard !filename.isEmpty else {
             printError("Filename required")
             return .continue
@@ -256,8 +296,6 @@ class EnhancedChatCommand: CommandProtocol {
         return .continue
     }
 
-
-
     private func estimateTokens(for text: String) -> Int {
 
         return text.count / 4
@@ -271,33 +309,39 @@ class EnhancedChatCommand: CommandProtocol {
         }
 
         let percentage = Double(totalTokens) / Double(configuration.maxContextTokens) * 100
-        let color = percentage > 90 ? EnhancedTerminalStyle.red :
-                    percentage > 70 ? EnhancedTerminalStyle.orange :
-                    EnhancedTerminalStyle.gray
+        let color =
+            percentage > 90
+            ? EnhancedTerminalStyle.red
+            : percentage > 70 ? EnhancedTerminalStyle.orange : EnhancedTerminalStyle.gray
 
-        print("\(color)[Tokens: ~\(totalTokens)/\(configuration.maxContextTokens) (\(Int(percentage))%)]\(EnhancedTerminalStyle.reset)")
+        print(
+            "\(color)[Tokens: ~\(totalTokens)/\(configuration.maxContextTokens) (\(Int(percentage))%)]\(EnhancedTerminalStyle.reset)"
+        )
     }
 
-
-
-    private func handleUserInput(model: inout OllamaModelName, messages: inout [ChatMessage]) async -> Bool {
+    private func handleUserInput(model: inout OllamaModelName, messages: inout [ChatMessage]) async
+        -> Bool
+    {
         printTimestamp()
-        print("\(EnhancedTerminalStyle.neonGreen)You:\(EnhancedTerminalStyle.reset) ", terminator: "")
+        print(
+            "\(EnhancedTerminalStyle.neonGreen)You:\(EnhancedTerminalStyle.reset) ",
+            terminator: ""
+        )
 
         guard let input = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines) else {
             return false
         }
 
-
         guard !input.isEmpty else {
             return true
         }
 
-
         if input.starts(with: "/") {
             switch processCommand(input, messages: &messages, model: &model) {
             case .exit:
-                print("\n\(EnhancedTerminalStyle.neonPink)Goodbye! Chat session ended.\(EnhancedTerminalStyle.reset)")
+                print(
+                    "\n\(EnhancedTerminalStyle.neonPink)Goodbye! Chat session ended.\(EnhancedTerminalStyle.reset)"
+                )
                 return false
             case .continue:
                 return true
@@ -307,9 +351,7 @@ class EnhancedChatCommand: CommandProtocol {
             }
         }
 
-
         messages.append(ChatMessage(role: .user, content: input))
-
 
         await generateResponse(messages: &messages, model: model)
 
@@ -318,7 +360,10 @@ class EnhancedChatCommand: CommandProtocol {
 
     private func generateResponse(messages: inout [ChatMessage], model: OllamaModelName) async {
         printTimestamp()
-        print("\(EnhancedTerminalStyle.neonBlue)Assistant:\(EnhancedTerminalStyle.reset) ", terminator: "")
+        print(
+            "\(EnhancedTerminalStyle.neonBlue)Assistant:\(EnhancedTerminalStyle.reset) ",
+            terminator: ""
+        )
         fflush(stdout)
 
         guard let client = client as? OllamaClient else {
@@ -330,7 +375,6 @@ class EnhancedChatCommand: CommandProtocol {
             let startTime = Date()
             var fullResponse = ""
             var tokenCount = 0
-
 
             if configuration.typingDelay > 0 {
                 printTypingIndicator()
@@ -355,17 +399,19 @@ class EnhancedChatCommand: CommandProtocol {
                 if response.done {
                     messages.append(ChatMessage(role: .assistant, content: fullResponse))
 
-
                     if configuration.showTokenCount {
                         let duration = Date().timeIntervalSince(startTime)
                         let tokensPerSecond = Double(tokenCount) / duration
-                        print("\n\(EnhancedTerminalStyle.dim)[Generated \(tokenCount) tokens in \(String(format: "%.1f", duration))s (\(String(format: "%.1f", tokensPerSecond)) tokens/s)]\(EnhancedTerminalStyle.reset)")
+                        print(
+                            "\n\(EnhancedTerminalStyle.dim)[Generated \(tokenCount) tokens in \(String(format: "%.1f", duration))s (\(String(format: "%.1f", tokensPerSecond)) tokens/s)]\(EnhancedTerminalStyle.reset)"
+                        )
                     }
                 }
             }
 
-            print("\n\(EnhancedTerminalStyle.neonBlue)────────────────────────────────────────────────────────────\(EnhancedTerminalStyle.reset)")
-
+            print(
+                "\n\(EnhancedTerminalStyle.neonBlue)────────────────────────────────────────────────────────────\(EnhancedTerminalStyle.reset)"
+            )
 
             printTokenInfo(messages: messages)
 
@@ -410,8 +456,6 @@ class EnhancedChatCommand: CommandProtocol {
         }
     }
 
-
-
     func execute(with arguments: [String]) async throws {
         guard !arguments.isEmpty else {
             throw CLIError.missingArgument("Model name required. Usage: swollama chat <model>")
@@ -420,7 +464,6 @@ class EnhancedChatCommand: CommandProtocol {
         guard var model = OllamaModelName.parse(arguments[0]) else {
             throw CLIError.invalidArgument("Invalid model name format: '\(arguments[0])'")
         }
-
 
         for i in 1..<arguments.count {
             switch arguments[i] {
@@ -445,14 +488,11 @@ class EnhancedChatCommand: CommandProtocol {
 
         var messages: [ChatMessage] = []
 
-
         installSignalHandlers()
-
 
         while await handleUserInput(model: &model, messages: &messages) {
 
         }
-
 
         if configuration.autoSave {
             let filename = configuration.savePath ?? "chat_\(Date().timeIntervalSince1970).json"
@@ -462,9 +502,11 @@ class EnhancedChatCommand: CommandProtocol {
 
     private func installSignalHandlers() {
         #if os(Linux)
-        signal(SIGINT) { _ in
-            print("\n\(EnhancedTerminalStyle.neonPink)Chat interrupted. Type '/exit' to quit.\(EnhancedTerminalStyle.reset)")
-        }
+            signal(SIGINT) { _ in
+                print(
+                    "\n\(EnhancedTerminalStyle.neonPink)Chat interrupted. Type '/exit' to quit.\(EnhancedTerminalStyle.reset)"
+                )
+            }
         #endif
     }
 }

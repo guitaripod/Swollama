@@ -1,11 +1,9 @@
 import Foundation
 
-
 class InputHandler {
     private var history: [String] = []
     private var historyIndex: Int = 0
     private let maxHistorySize: Int = 100
-
 
     private enum ANSICode {
         static let moveUp = "\u{001B}[A"
@@ -17,7 +15,6 @@ class InputHandler {
         static let saveCursor = "\u{001B}[s"
         static let restoreCursor = "\u{001B}[u"
     }
-
 
     private enum KeyCode {
         static let escape: UInt8 = 27
@@ -33,7 +30,6 @@ class InputHandler {
         static let ctrlE: UInt8 = 5
         static let tab: UInt8 = 9
     }
-
 
     enum InputMode {
         case singleLine
@@ -51,14 +47,13 @@ class InputHandler {
         saveHistory()
     }
 
-
-
     private func loadHistory() {
         let historyPath = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".swollama_history")
 
         if let data = try? Data(contentsOf: historyPath),
-           let loadedHistory = try? JSONDecoder().decode([String].self, from: data) {
+            let loadedHistory = try? JSONDecoder().decode([String].self, from: data)
+        {
             history = loadedHistory
         }
     }
@@ -75,12 +70,9 @@ class InputHandler {
     private func addToHistory(_ input: String) {
         guard !input.isEmpty else { return }
 
-
         history.removeAll { $0 == input }
 
-
         history.append(input)
-
 
         if history.count > maxHistorySize {
             history.removeFirst()
@@ -89,37 +81,29 @@ class InputHandler {
         historyIndex = history.count
     }
 
-
-
     private func enableRawMode() {
         #if os(Linux)
-        var termios = termios()
-        tcgetattr(STDIN_FILENO, &termios)
+            var termios = termios()
+            tcgetattr(STDIN_FILENO, &termios)
 
-        termios.c_lflag &= ~(tcflag_t(ECHO | ICANON))
-        tcsetattr(STDIN_FILENO, TCSANOW, &termios)
-
-
+            termios.c_lflag &= ~(tcflag_t(ECHO | ICANON))
+            tcsetattr(STDIN_FILENO, TCSANOW, &termios)
 
         #endif
     }
 
     private func disableRawMode() {
         #if os(Linux)
-        var termios = termios()
-        tcgetattr(STDIN_FILENO, &termios)
-        termios.c_lflag |= tcflag_t(ECHO | ICANON)
-        tcsetattr(STDIN_FILENO, TCSANOW, &termios)
+            var termios = termios()
+            tcgetattr(STDIN_FILENO, &termios)
+            termios.c_lflag |= tcflag_t(ECHO | ICANON)
+            tcsetattr(STDIN_FILENO, TCSANOW, &termios)
         #endif
     }
-
-
 
     func readLine(prompt: String = "") -> String? {
         print(prompt, terminator: "")
         fflush(stdout)
-
-
 
         guard let input = Swift.readLine() else {
             return nil
@@ -128,8 +112,6 @@ class InputHandler {
         addToHistory(input)
         return input
     }
-
-
 
     func readMultiLine(prompt: String = "", terminator: String = "```") -> String? {
         print(prompt, terminator: "")
@@ -155,8 +137,6 @@ class InputHandler {
         return result
     }
 
-
-
     func autocomplete(partial: String, candidates: [String]) -> String? {
         let matches = candidates.filter { $0.hasPrefix(partial) }
 
@@ -175,8 +155,6 @@ class InputHandler {
         }
     }
 
-
-
     func confirm(prompt: String, defaultValue: Bool = false) -> Bool {
         let defaultStr = defaultValue ? "Y/n" : "y/N"
         print("\(prompt) [\(defaultStr)] ", terminator: "")
@@ -192,31 +170,27 @@ class InputHandler {
         return input == "y" || input == "yes"
     }
 
-
-
     func readPassword(prompt: String = "Password: ") -> String? {
         print(prompt, terminator: "")
         fflush(stdout)
 
         #if os(Linux)
 
-        var termios = termios()
-        tcgetattr(STDIN_FILENO, &termios)
-        var originalTermios = termios
-        termios.c_lflag &= ~tcflag_t(ECHO)
-        tcsetattr(STDIN_FILENO, TCSANOW, &termios)
+            var termios = termios()
+            tcgetattr(STDIN_FILENO, &termios)
+            var originalTermios = termios
+            termios.c_lflag &= ~tcflag_t(ECHO)
+            tcsetattr(STDIN_FILENO, TCSANOW, &termios)
 
-        defer {
+            defer {
 
-            tcsetattr(STDIN_FILENO, TCSANOW, &originalTermios)
-            print()
-        }
+                tcsetattr(STDIN_FILENO, TCSANOW, &originalTermios)
+                print()
+            }
         #endif
 
         return readLine()
     }
-
-
 
     func selectOption<T>(prompt: String, options: [(String, T)]) -> T? {
         print(prompt)
@@ -228,17 +202,16 @@ class InputHandler {
         print("\nEnter selection (1-\(options.count)): ", terminator: "")
 
         guard let input = readLine(),
-              let selection = Int(input),
-              selection > 0,
-              selection <= options.count else {
+            let selection = Int(input),
+            selection > 0,
+            selection <= options.count
+        else {
             return nil
         }
 
         return options[selection - 1].1
     }
 }
-
-
 
 extension InputHandler {
     func readValidatedInput(
@@ -268,23 +241,24 @@ extension InputHandler {
             return true
         }
 
-        let errorMessage = range.map {
-            "Please enter a number between \($0.lowerBound) and \($0.upperBound)"
-        } ?? "Please enter a valid number"
+        let errorMessage =
+            range.map {
+                "Please enter a number between \($0.lowerBound) and \($0.upperBound)"
+            } ?? "Please enter a valid number"
 
-        guard let input = readValidatedInput(
-            prompt: prompt,
-            validator: validator,
-            errorMessage: errorMessage
-        ) else {
+        guard
+            let input = readValidatedInput(
+                prompt: prompt,
+                validator: validator,
+                errorMessage: errorMessage
+            )
+        else {
             return nil
         }
 
         return Int(input)
     }
 }
-
-
 
 class ProgressIndicator {
     private let message: String
@@ -300,7 +274,10 @@ class ProgressIndicator {
         isRunning = true
         Task {
             while isRunning {
-                print("\r\(EnhancedTerminalStyle.neonBlue)\(frames[currentFrame])\(EnhancedTerminalStyle.reset) \(message)", terminator: "")
+                print(
+                    "\r\(EnhancedTerminalStyle.neonBlue)\(frames[currentFrame])\(EnhancedTerminalStyle.reset) \(message)",
+                    terminator: ""
+                )
                 fflush(stdout)
                 currentFrame = (currentFrame + 1) % frames.count
                 try? await Task.sleep(nanoseconds: 100_000_000)
@@ -315,15 +292,13 @@ class ProgressIndicator {
     }
 }
 
-
-
 struct Terminal {
     static func getSize() -> (width: Int, height: Int) {
         #if os(Linux)
-        var winsize = winsize()
-        if ioctl(STDOUT_FILENO, TIOCGWINSZ, &winsize) == 0 {
-            return (Int(winsize.ws_col), Int(winsize.ws_row))
-        }
+            var winsize = winsize()
+            if ioctl(STDOUT_FILENO, TIOCGWINSZ, &winsize) == 0 {
+                return (Int(winsize.ws_col), Int(winsize.ws_row))
+            }
         #endif
         return (80, 24)
     }
@@ -352,8 +327,6 @@ struct Terminal {
         print("\u{001B}[?47l", terminator: "")
     }
 }
-
-
 
 struct TextFormatter {
     static func wrap(_ text: String, width: Int) -> [String] {

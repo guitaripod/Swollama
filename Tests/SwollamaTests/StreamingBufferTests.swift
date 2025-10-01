@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import Swollama
 
 final class StreamingBufferTests: XCTestCase {
@@ -144,10 +145,10 @@ final class StreamingBufferTests: XCTestCase {
         let decoder = JSONDecoder()
 
         let jsonStream = """
-        {"message":"Hello","done":false}
-        {"message":" world","done":false}
-        {"message":"!","done":true}
-        """.data(using: .utf8)!
+            {"message":"Hello","done":false}
+            {"message":" world","done":false}
+            {"message":"!","done":true}
+            """.data(using: .utf8)!
 
         buffer.append(jsonStream)
 

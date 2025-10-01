@@ -1,14 +1,10 @@
 import Foundation
 import Swollama
 
-
 protocol ModelFormatter {
-
-
 
     func format(_ model: ModelListEntry) -> String
 }
-
 
 struct DefaultModelFormatter: ModelFormatter {
 
@@ -18,9 +14,6 @@ struct DefaultModelFormatter: ModelFormatter {
         formatter.timeStyle = .short
         return formatter
     }()
-
-
-
 
     func format(_ model: ModelListEntry) -> String {
         """
@@ -35,10 +28,7 @@ struct DefaultModelFormatter: ModelFormatter {
     }
 }
 
-
 struct FileSize {
-
-
 
     static func format(bytes: Int) -> String {
         let gigabyte = 1024 * 1024 * 1024

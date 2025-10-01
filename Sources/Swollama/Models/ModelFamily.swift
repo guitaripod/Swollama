@@ -1,6 +1,5 @@
 import Foundation
 
-
 public enum ModelFamily: String, Codable {
     case llama
     case mistral

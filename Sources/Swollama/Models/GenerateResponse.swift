@@ -41,7 +41,6 @@ public struct GenerateResponse: Codable, Sendable {
     /// Time taken to generate the response in nanoseconds. Only present when `done` is `true`.
     public let evalDuration: UInt64?
 
-
     private enum CodingKeys: String, CodingKey {
         case model
         case createdAt = "created_at"
@@ -57,9 +56,6 @@ public struct GenerateResponse: Codable, Sendable {
         case evalDuration = "eval_duration"
     }
 
-
-
-
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
@@ -74,7 +70,6 @@ public struct GenerateResponse: Codable, Sendable {
         promptEvalDuration = try container.decodeIfPresent(UInt64.self, forKey: .promptEvalDuration)
         evalCount = try container.decodeIfPresent(Int.self, forKey: .evalCount)
         evalDuration = try container.decodeIfPresent(UInt64.self, forKey: .evalDuration)
-
 
         let dateString = try container.decode(String.self, forKey: .createdAt)
         let formatter = DateFormatter()
@@ -93,7 +88,8 @@ public struct GenerateResponse: Codable, Sendable {
                 throw DecodingError.dataCorrupted(
                     DecodingError.Context(
                         codingPath: container.codingPath + [CodingKeys.createdAt],
-                        debugDescription: "Date string '\(dateString)' does not match expected format",
+                        debugDescription:
+                            "Date string '\(dateString)' does not match expected format",
                         underlyingError: nil
                     )
                 )

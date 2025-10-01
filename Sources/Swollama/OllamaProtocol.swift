@@ -1,44 +1,5 @@
 import Foundation
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /// Protocol defining the complete Ollama API interface.
 ///
 /// `OllamaProtocol` defines all available operations for interacting with an Ollama server,
@@ -65,50 +26,11 @@ public protocol OllamaProtocol: Sendable {
     /// Configuration settings including timeouts, retries, and keep-alive behavior.
     var configuration: OllamaConfiguration { get }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// Lists all models available on the Ollama server.
     ///
     /// - Returns: An array of ``ModelListEntry`` objects containing model information.
     /// - Throws: ``OllamaError`` if the request fails.
     func listModels() async throws -> [ModelListEntry]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /// Retrieves detailed information about a specific model.
     ///
@@ -118,31 +40,6 @@ public protocol OllamaProtocol: Sendable {
     /// - Returns: A ``ModelInformation`` object containing model details, template, and parameters.
     /// - Throws: ``OllamaError/modelNotFound`` if the model doesn't exist, or other ``OllamaError`` variants.
     func showModel(name: OllamaModelName, verbose: Bool?) async throws -> ModelInformation
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /// Downloads a model from the Ollama registry.
     ///
@@ -159,31 +56,6 @@ public protocol OllamaProtocol: Sendable {
         options: PullOptions
     ) async throws -> AsyncThrowingStream<OperationProgress, Error>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// Uploads a model to the Ollama registry.
     ///
     /// Returns a stream of progress updates as the model is uploaded. The model name must
@@ -199,26 +71,6 @@ public protocol OllamaProtocol: Sendable {
         options: PushOptions
     ) async throws -> AsyncThrowingStream<OperationProgress, Error>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// Creates a copy of an existing model with a new name.
     ///
     /// - Parameters:
@@ -227,50 +79,11 @@ public protocol OllamaProtocol: Sendable {
     /// - Throws: ``OllamaError`` if the copy operation fails.
     func copyModel(source: OllamaModelName, destination: OllamaModelName) async throws
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// Deletes a model from the Ollama server.
     ///
     /// - Parameter name: The name of the model to delete.
     /// - Throws: ``OllamaError/modelNotFound`` if the model doesn't exist, or other ``OllamaError`` variants.
     func deleteModel(name: OllamaModelName) async throws
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /// Lists currently running models on the Ollama server.
     ///
@@ -281,28 +94,6 @@ public protocol OllamaProtocol: Sendable {
     /// - Throws: ``OllamaError`` if the request fails.
     func listRunningModels() async throws -> [RunningModelInfo]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// Creates a new model from a Modelfile.
     ///
     /// Returns a stream of progress updates as the model is created. The request can specify
@@ -311,22 +102,9 @@ public protocol OllamaProtocol: Sendable {
     /// - Parameter request: A ``CreateModelRequest`` containing the model configuration.
     /// - Returns: An ``AsyncThrowingStream`` of ``OperationProgress`` objects tracking creation progress.
     /// - Throws: ``OllamaError`` if the model creation fails.
-    func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<OperationProgress, Error>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<
+        OperationProgress, Error
+    >
 
     /// Checks whether a blob exists on the Ollama server.
     ///
@@ -338,23 +116,6 @@ public protocol OllamaProtocol: Sendable {
     /// - Throws: ``OllamaError/invalidParameters(_:)`` if the digest format is invalid, or other ``OllamaError`` variants.
     func checkBlobExists(digest: String) async throws -> Bool
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// Uploads a blob to the Ollama server.
     ///
     /// Blobs are used to store model layers and other binary data. The digest must match
@@ -365,20 +126,6 @@ public protocol OllamaProtocol: Sendable {
     ///   - data: The binary data to upload.
     /// - Throws: ``OllamaError/invalidParameters(_:)`` if the digest format is invalid, or other ``OllamaError`` variants.
     func pushBlob(digest: String, data: Data) async throws
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /// Retrieves the Ollama server version.
     ///

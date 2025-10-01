@@ -55,6 +55,8 @@ for try await response in try await client.chat(messages: messages, model: model
 
 **Code style**: Never add code comments
 
+**Formatting**: Run `swift-format format --in-place --recursive Sources/ Tests/` before committing
+
 **Tools**: Use the latest tools available
 
 ## Testing

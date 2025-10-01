@@ -62,7 +62,6 @@ public enum AgentEvent: Sendable {
     case done
 }
 
-
 extension AgentEvent: CustomStringConvertible {
     public var description: String {
         switch self {

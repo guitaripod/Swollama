@@ -1,4 +1,5 @@
 import XCTest
+
 @testable import Swollama
 
 final class ErrorHandlingTests: XCTestCase {
@@ -13,7 +14,7 @@ final class ErrorHandlingTests: XCTestCase {
             .networkError(NSError(domain: "test", code: 2)),
             .unexpectedStatusCode(418),
             .invalidParameters("Bad request"),
-            .fileError("File not found")
+            .fileError("File not found"),
         ]
 
         for error in errors {
@@ -23,9 +24,13 @@ final class ErrorHandlingTests: XCTestCase {
     }
 
     func testDecodingErrorDescription() {
-        let underlyingError = NSError(domain: "JSONDecoder", code: 1, userInfo: [
-            NSLocalizedDescriptionKey: "Invalid JSON"
-        ])
+        let underlyingError = NSError(
+            domain: "JSONDecoder",
+            code: 1,
+            userInfo: [
+                NSLocalizedDescriptionKey: "Invalid JSON"
+            ]
+        )
         let error = OllamaError.decodingError(underlyingError)
 
         XCTAssertTrue(error.errorDescription!.contains("decode"))

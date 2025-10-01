@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 struct ListModelsCommand: CommandProtocol {
     private let client: OllamaProtocol
     private let formatter: ModelFormatter

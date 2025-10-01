@@ -1,7 +1,8 @@
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
 import Foundation
+
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
 
 /// A thread-safe client for interacting with the Ollama API.
 ///
@@ -60,7 +61,10 @@ public actor OllamaClient: OllamaProtocol {
     /// - Parameters:
     ///   - baseURL: The base URL of the Ollama server. Defaults to `http://localhost:11434`.
     ///   - configuration: Client configuration including timeouts and retry behavior. Defaults to ``OllamaConfiguration/default``.
-    public init(baseURL: URL = URL(string: "http://localhost:11434")!, configuration: OllamaConfiguration = .default) {
+    public init(
+        baseURL: URL = URL(string: "http://localhost:11434")!,
+        configuration: OllamaConfiguration = .default
+    ) {
         self.baseURL = baseURL
         self.configuration = configuration
 
@@ -92,13 +96,6 @@ public actor OllamaClient: OllamaProtocol {
         self.encoder.dateEncodingStrategy = .iso8601
     }
 
-
-
-
-
-
-
-
     func makeRequest(
         endpoint: String,
         method: String = "GET",
@@ -116,7 +113,10 @@ public actor OllamaClient: OllamaProtocol {
         var lastError: Error?
         for attempt in 0...configuration.maxRetries {
             do {
-                let (data, response) = try await NetworkingSupport.dataTask(session: session, for: request)
+                let (data, response) = try await NetworkingSupport.dataTask(
+                    session: session,
+                    for: request
+                )
 
                 guard let httpResponse = response as? HTTPURLResponse else {
                     throw OllamaError.invalidResponse
@@ -167,13 +167,6 @@ public actor OllamaClient: OllamaProtocol {
         throw OllamaError.networkError(lastError ?? URLError(.unknown))
     }
 
-
-
-
-
-
-
-
     func streamRequest<T: Decodable>(
         endpoint: String,
         method: String = "POST",
@@ -183,13 +176,18 @@ public actor OllamaClient: OllamaProtocol {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let url = baseURL.appendingPathComponent("/api").appendingPathComponent(endpoint)
+                    let url = baseURL.appendingPathComponent("/api").appendingPathComponent(
+                        endpoint
+                    )
                     var request = URLRequest(url: url)
                     request.httpMethod = method
                     request.httpBody = body
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-                    let (dataStream, response) = try await NetworkingSupport.enhancedStreamTask(session: session, for: request)
+                    let (dataStream, response) = try await NetworkingSupport.enhancedStreamTask(
+                        session: session,
+                        for: request
+                    )
 
                     guard let httpResponse = response as? HTTPURLResponse else {
                         throw OllamaError.invalidResponse
@@ -202,7 +200,8 @@ public actor OllamaClient: OllamaProtocol {
                             if errorBody.count > 4096 { break }
                         }
 
-                        let errorMessage = String(data: errorBody, encoding: .utf8) ?? "Unknown error"
+                        let errorMessage =
+                            String(data: errorBody, encoding: .utf8) ?? "Unknown error"
 
                         switch httpResponse.statusCode {
                         case 404:
@@ -238,7 +237,6 @@ public actor OllamaClient: OllamaProtocol {
                         }
                     }
 
-
                     if !buffer.isEmpty {
                         do {
                             let decoded = try decoder.decode(T.self, from: buffer)
@@ -261,10 +259,6 @@ public actor OllamaClient: OllamaProtocol {
         }
     }
 
-
-
-
-
     /// Encodes a value to JSON data.
     ///
     /// - Parameter value: The encodable value to convert to JSON.
@@ -274,7 +268,9 @@ public actor OllamaClient: OllamaProtocol {
         do {
             return try encoder.encode(value)
         } catch {
-            throw OllamaError.invalidParameters("Failed to encode request: \(error.localizedDescription)")
+            throw OllamaError.invalidParameters(
+                "Failed to encode request: \(error.localizedDescription)"
+            )
         }
     }
 

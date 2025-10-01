@@ -13,15 +13,29 @@ struct GenerateCommand: CommandProtocol {
     }
 
     private func printHeader(model: OllamaModelName) {
-        print("\n\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╔════════════════════════════════════════╗\(TerminalStyle.reset)")
-        print("\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)║\(TerminalStyle.neonPink) Text Generation: \(TerminalStyle.neonGreen)\(model.fullName)\(TerminalStyle.neonBlue) ║\(TerminalStyle.reset)")
-        print("\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╚════════════════════════════════════════╝\(TerminalStyle.reset)\n")
+        print(
+            "\n\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╔════════════════════════════════════════╗\(TerminalStyle.reset)"
+        )
+        print(
+            "\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)║\(TerminalStyle.neonPink) Text Generation: \(TerminalStyle.neonGreen)\(model.fullName)\(TerminalStyle.neonBlue) ║\(TerminalStyle.reset)"
+        )
+        print(
+            "\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╚════════════════════════════════════════╝\(TerminalStyle.reset)\n"
+        )
 
         print("\(TerminalStyle.mutedPurple)Available Commands:")
-        print("• Type '\(TerminalStyle.neonYellow)exit\(TerminalStyle.mutedPurple)' or '\(TerminalStyle.neonYellow)quit\(TerminalStyle.mutedPurple)' to end the session")
-        print("• Type '\(TerminalStyle.neonYellow)clear\(TerminalStyle.mutedPurple)' to clear the screen")
-        print("• Type '\(TerminalStyle.neonYellow)/system <message>\(TerminalStyle.mutedPurple)' to set a system message\(TerminalStyle.reset)")
-        print("\(TerminalStyle.neonBlue)═══════════════════════════════════════════════\(TerminalStyle.reset)\n")
+        print(
+            "• Type '\(TerminalStyle.neonYellow)exit\(TerminalStyle.mutedPurple)' or '\(TerminalStyle.neonYellow)quit\(TerminalStyle.mutedPurple)' to end the session"
+        )
+        print(
+            "• Type '\(TerminalStyle.neonYellow)clear\(TerminalStyle.mutedPurple)' to clear the screen"
+        )
+        print(
+            "• Type '\(TerminalStyle.neonYellow)/system <message>\(TerminalStyle.mutedPurple)' to set a system message\(TerminalStyle.reset)"
+        )
+        print(
+            "\(TerminalStyle.neonBlue)═══════════════════════════════════════════════\(TerminalStyle.reset)\n"
+        )
     }
 
     private func printTimestamp() {
@@ -56,7 +70,9 @@ struct GenerateCommand: CommandProtocol {
 
             switch input.lowercased() {
             case "exit", "quit":
-                print("\n\(TerminalStyle.neonPink)Goodbye! Generation session ended.\(TerminalStyle.reset)")
+                print(
+                    "\n\(TerminalStyle.neonPink)Goodbye! Generation session ended.\(TerminalStyle.reset)"
+                )
                 return
             case "clear":
                 clearScreen()
@@ -67,7 +83,9 @@ struct GenerateCommand: CommandProtocol {
             default:
                 if input.starts(with: "/system ") {
                     systemPrompt = String(input.dropFirst(8))
-                    print("\n\(TerminalStyle.neonYellow)System prompt updated.\(TerminalStyle.reset)")
+                    print(
+                        "\n\(TerminalStyle.neonYellow)System prompt updated.\(TerminalStyle.reset)"
+                    )
                     continue
                 }
             }
@@ -77,7 +95,9 @@ struct GenerateCommand: CommandProtocol {
             fflush(stdout)
 
             guard let client = client as? OllamaClient else {
-                print("\(TerminalStyle.neonPink)Error: Generation requires OllamaClient\(TerminalStyle.reset)")
+                print(
+                    "\(TerminalStyle.neonPink)Error: Generation requires OllamaClient\(TerminalStyle.reset)"
+                )
                 return
             }
 
@@ -103,37 +123,42 @@ struct GenerateCommand: CommandProtocol {
                     }
                 }
 
-                print("\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)")
+                print(
+                    "\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)"
+                )
 
             } catch {
-                print("\n\(TerminalStyle.neonPink)Error during generation: \(error)\(TerminalStyle.reset)")
+                print(
+                    "\n\(TerminalStyle.neonPink)Error during generation: \(error)\(TerminalStyle.reset)"
+                )
                 if let ollamaError = error as? OllamaError {
-                    let errorMessage = switch ollamaError {
-                    case .modelNotFound:
-                        "Model '\(model.fullName)' not found. Please check the model name and try again."
-                    case .serverError(let message):
-                        "Server error: \(message)"
-                    case .networkError(let underlying):
-                        "Network error: \(underlying.localizedDescription)"
-                    case .invalidResponse:
-                        "Invalid response from server"
-                    case .invalidParameters(let message):
-                        "Invalid parameters: \(message)"
-                    case .decodingError(let error):
-                        "Error decoding response: \(error.localizedDescription)"
-                    case .unexpectedStatusCode(let code):
-                        "Unexpected status code: \(code)"
-                    case .httpError(let statusCode, let message):
-                        if let message = message {
-                            "HTTP error \(statusCode): \(message)"
-                        } else {
-                            "HTTP error \(statusCode)"
+                    let errorMessage =
+                        switch ollamaError {
+                        case .modelNotFound:
+                            "Model '\(model.fullName)' not found. Please check the model name and try again."
+                        case .serverError(let message):
+                            "Server error: \(message)"
+                        case .networkError(let underlying):
+                            "Network error: \(underlying.localizedDescription)"
+                        case .invalidResponse:
+                            "Invalid response from server"
+                        case .invalidParameters(let message):
+                            "Invalid parameters: \(message)"
+                        case .decodingError(let error):
+                            "Error decoding response: \(error.localizedDescription)"
+                        case .unexpectedStatusCode(let code):
+                            "Unexpected status code: \(code)"
+                        case .httpError(let statusCode, let message):
+                            if let message = message {
+                                "HTTP error \(statusCode): \(message)"
+                            } else {
+                                "HTTP error \(statusCode)"
+                            }
+                        case .cancelled:
+                            "Cancelled"
+                        case .fileError(_):
+                            "File error"
                         }
-                    case .cancelled:
-                        "Cancelled"
-                    case .fileError(_):
-                        "File error"
-                    }
                     print("\(TerminalStyle.neonPink)\(errorMessage)\(TerminalStyle.reset)")
                 }
             }

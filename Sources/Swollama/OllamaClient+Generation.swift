@@ -1,51 +1,10 @@
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
 import Foundation
 
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
+
 extension OllamaClient {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /// Generates text completions with streaming responses.
     ///
@@ -105,56 +64,6 @@ extension OllamaClient {
         )
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /// Generates chat completions with streaming responses.
     ///
     /// Sends a conversation history to the specified model and returns a stream of incremental
@@ -209,42 +118,6 @@ extension OllamaClient {
             as: ChatResponse.self
         )
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /// Generates vector embeddings for text input.
     ///

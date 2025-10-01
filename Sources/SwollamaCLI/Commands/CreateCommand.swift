@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 struct CreateCommand: CommandProtocol {
     private let client: OllamaProtocol
     private let progressTracker: ProgressTracker
@@ -17,7 +16,6 @@ struct CreateCommand: CommandProtocol {
         }
 
         let modelName = arguments[0]
-
 
         var fromModel: String? = nil
         var systemPrompt: String? = nil
@@ -52,11 +50,15 @@ struct CreateCommand: CommandProtocol {
             case "--quantize", "-q":
                 i += 1
                 guard i < arguments.count else {
-                    throw CLIError.missingArgument("--quantize requires a type (q4_K_M, q4_K_S, q8_0)")
+                    throw CLIError.missingArgument(
+                        "--quantize requires a type (q4_K_M, q4_K_S, q8_0)"
+                    )
                 }
                 quantize = QuantizationType(rawValue: arguments[i])
                 if quantize == nil {
-                    throw CLIError.invalidArgument("Invalid quantization type. Valid options: q4_K_M, q4_K_S, q8_0")
+                    throw CLIError.invalidArgument(
+                        "Invalid quantization type. Valid options: q4_K_M, q4_K_S, q8_0"
+                    )
                 }
 
             case "--temperature":
@@ -81,7 +83,6 @@ struct CreateCommand: CommandProtocol {
             }
             i += 1
         }
-
 
         let request = CreateModelRequest(
             model: modelName,
@@ -117,25 +118,27 @@ struct CreateCommand: CommandProtocol {
     }
 
     private func printCreateHelp() {
-        print("""
-        Usage: swollama create <model-name> [options]
+        print(
+            """
+            Usage: swollama create <model-name> [options]
 
-        Create a new model from an existing model, GGUF files, or Safetensors.
+            Create a new model from an existing model, GGUF files, or Safetensors.
 
-        Options:
-            --from, -f <model>      Base model to create from
-            --system, -s <prompt>   System prompt for the model
-            --template, -t <tmpl>   Prompt template
-            --quantize, -q <type>   Quantization type (q4_K_M, q4_K_S, q8_0)
-            --temperature <value>   Temperature parameter
-            --help, -h              Show this help message
+            Options:
+                --from, -f <model>      Base model to create from
+                --system, -s <prompt>   System prompt for the model
+                --template, -t <tmpl>   Prompt template
+                --quantize, -q <type>   Quantization type (q4_K_M, q4_K_S, q8_0)
+                --temperature <value>   Temperature parameter
+                --help, -h              Show this help message
 
-        Examples:
-            # Create a custom model from llama3.2
-            swollama create mario --from llama3.2 --system "You are Mario from Super Mario Bros."
+            Examples:
+                # Create a custom model from llama3.2
+                swollama create mario --from llama3.2 --system "You are Mario from Super Mario Bros."
 
-            # Create a quantized version
-            swollama create llama3.2:quantized --from llama3.2:3b-instruct-fp16 --quantize q4_K_M
-        """)
+                # Create a quantized version
+                swollama create llama3.2:quantized --from llama3.2:3b-instruct-fp16 --quantize q4_K_M
+            """
+        )
     }
 }

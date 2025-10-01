@@ -8,7 +8,9 @@ extension OllamaClient {
         return response.models
     }
 
-    public func showModel(name: OllamaModelName, verbose: Bool? = nil) async throws -> ModelInformation {
+    public func showModel(name: OllamaModelName, verbose: Bool? = nil) async throws
+        -> ModelInformation
+    {
         let request = ShowModelRequest(model: name.fullName, verbose: verbose)
         let data = try await makeRequest(
             endpoint: "show",
@@ -96,7 +98,9 @@ extension OllamaClient {
         return response.models
     }
 
-    public func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<OperationProgress, Error> {
+    public func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<
+        OperationProgress, Error
+    > {
         return streamRequest(
             endpoint: "create",
             method: "POST",
@@ -116,8 +120,9 @@ extension OllamaClient {
         } catch {
 
             if let ollamaError = error as? OllamaError,
-               case .serverError(let message) = ollamaError,
-               message.contains("404") || message.contains("Not Found") {
+                case .serverError(let message) = ollamaError,
+                message.contains("404") || message.contains("Not Found")
+            {
                 return false
             }
             throw error
@@ -139,20 +144,28 @@ extension OllamaClient {
         let range = NSRange(digest.startIndex..<digest.endIndex, in: digest)
 
         guard regex.firstMatch(in: digest, options: [], range: range) != nil else {
-            throw OllamaError.invalidParameters("Invalid digest format. Expected format: sha256:<hex> or sha512:<hex>")
+            throw OllamaError.invalidParameters(
+                "Invalid digest format. Expected format: sha256:<hex> or sha512:<hex>"
+            )
         }
 
         let components = digest.split(separator: ":")
         guard components.count == 2 else {
-            throw OllamaError.invalidParameters("Invalid digest format. Expected format: sha256:<hex> or sha512:<hex>")
+            throw OllamaError.invalidParameters(
+                "Invalid digest format. Expected format: sha256:<hex> or sha512:<hex>"
+            )
         }
 
         let hashLength = components[1].count
         if components[0].lowercased() == "sha256" && hashLength != 64 {
-            throw OllamaError.invalidParameters("Invalid digest format. SHA256 requires exactly 64 hex characters")
+            throw OllamaError.invalidParameters(
+                "Invalid digest format. SHA256 requires exactly 64 hex characters"
+            )
         }
         if components[0].lowercased() == "sha512" && hashLength != 128 {
-            throw OllamaError.invalidParameters("Invalid digest format. SHA512 requires exactly 128 hex characters")
+            throw OllamaError.invalidParameters(
+                "Invalid digest format. SHA512 requires exactly 128 hex characters"
+            )
         }
     }
 
@@ -182,7 +195,6 @@ private struct CopyModelRequest: Codable {
 private struct DeleteModelRequest: Codable {
     let name: String
 }
-
 
 /// Options for pulling models from the Ollama registry.
 public struct PullOptions {

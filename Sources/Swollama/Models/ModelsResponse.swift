@@ -1,10 +1,8 @@
 import Foundation
 
-
 struct ModelsResponse: Codable {
     let models: [ModelListEntry]
 }
-
 
 /// Information about an available model.
 ///
@@ -41,7 +39,6 @@ public struct ModelListEntry: Codable, Sendable {
         digest = try container.decode(String.self, forKey: .digest)
         details = try container.decode(ModelDetails.self, forKey: .details)
 
-
         let dateString = try container.decode(String.self, forKey: .modifiedAt)
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
@@ -59,7 +56,8 @@ public struct ModelListEntry: Codable, Sendable {
                 throw DecodingError.dataCorrupted(
                     DecodingError.Context(
                         codingPath: container.codingPath + [CodingKeys.modifiedAt],
-                        debugDescription: "Date string '\(dateString)' does not match expected format",
+                        debugDescription:
+                            "Date string '\(dateString)' does not match expected format",
                         underlyingError: nil
                     )
                 )
@@ -67,7 +65,6 @@ public struct ModelListEntry: Codable, Sendable {
         }
     }
 }
-
 
 /// Detailed information about a model.
 ///

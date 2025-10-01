@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 struct PushCommand: CommandProtocol {
     private let client: OllamaProtocol
     private let progressTracker: ProgressTracker
@@ -18,14 +17,16 @@ struct PushCommand: CommandProtocol {
 
         let modelNameString = arguments[0]
         guard let modelName = OllamaModelName.parse(modelNameString) else {
-            throw CLIError.invalidArgument("Invalid model name format. Must include namespace (e.g., username/modelname:tag)")
+            throw CLIError.invalidArgument(
+                "Invalid model name format. Must include namespace (e.g., username/modelname:tag)"
+            )
         }
-
 
         guard modelName.namespace != nil else {
-            throw CLIError.invalidArgument("Model name must include namespace for pushing (e.g., username/modelname:tag)")
+            throw CLIError.invalidArgument(
+                "Model name must include namespace for pushing (e.g., username/modelname:tag)"
+            )
         }
-
 
         var allowInsecure = false
 
@@ -66,24 +67,26 @@ struct PushCommand: CommandProtocol {
     }
 
     private func printPushHelp() {
-        print("""
-        Usage: swollama push <namespace/model:tag> [options]
+        print(
+            """
+            Usage: swollama push <namespace/model:tag> [options]
 
-        Push a model to the Ollama library. Requires registering for ollama.ai
-        and adding a public key first.
+            Push a model to the Ollama library. Requires registering for ollama.ai
+            and adding a public key first.
 
-        Options:
-            --insecure      Allow insecure connections (only for development)
-            --help, -h      Show this help message
+            Options:
+                --insecure      Allow insecure connections (only for development)
+                --help, -h      Show this help message
 
-        Examples:
-            # Push a model to your namespace
-            swollama push myusername/llama3-custom:latest
+            Examples:
+                # Push a model to your namespace
+                swollama push myusername/llama3-custom:latest
 
-            # Push with insecure connection (development only)
-            swollama push myusername/test-model:v1 --insecure
+                # Push with insecure connection (development only)
+                swollama push myusername/test-model:v1 --insecure
 
-        Note: The model name must include a namespace (username) when pushing.
-        """)
+            Note: The model name must include a namespace (username) when pushing.
+            """
+        )
     }
 }

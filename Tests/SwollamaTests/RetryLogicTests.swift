@@ -1,9 +1,11 @@
 import Foundation
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
 import XCTest
+
 @testable import Swollama
+
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
 
 final class RetryLogicTests: XCTestCase {
 
@@ -39,7 +41,11 @@ final class RetryLogicTests: XCTestCase {
             let elapsed = Date().timeIntervalSince(startTime)
             let expectedDelay = 0.01 * 3
             XCTAssertGreaterThan(elapsed, expectedDelay * 0.8, "Should have delayed for retries")
-            XCTAssertEqual(MockURLProtocol.requestCount, 4, "Should attempt once + 3 retries = 4 total")
+            XCTAssertEqual(
+                MockURLProtocol.requestCount,
+                4,
+                "Should attempt once + 3 retries = 4 total"
+            )
         } catch {
             XCTFail("Unexpected error type: \(error)")
         }
@@ -203,7 +209,11 @@ final class RetryLogicTests: XCTestCase {
                 return
             }
             XCTAssertEqual(code, 429)
-            XCTAssertEqual(MockURLProtocol.requestCount, 1, "Should not retry unexpected status codes")
+            XCTAssertEqual(
+                MockURLProtocol.requestCount,
+                1,
+                "Should not retry unexpected status codes"
+            )
         } catch {
             XCTFail("Unexpected error type: \(error)")
         }

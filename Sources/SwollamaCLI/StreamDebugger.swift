@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 struct StreamDebugger {
     static var isEnabled = false
     static var logFile: FileHandle?
@@ -28,13 +27,13 @@ struct StreamDebugger {
         let timestamp = dateFormatter.string(from: Date())
         let logMessage = "[\(timestamp)] [\(type.rawValue)] \(message)\n"
 
-
-        let coloredMessage = "\(type.color)[\(type.rawValue)]\(EnhancedTerminalStyle.reset) \(message)"
+        let coloredMessage =
+            "\(type.color)[\(type.rawValue)]\(EnhancedTerminalStyle.reset) \(message)"
         print(coloredMessage)
 
-
         if let logFile = logFile,
-           let data = logMessage.data(using: .utf8) {
+            let data = logMessage.data(using: .utf8)
+        {
             logFile.write(data)
         }
     }
@@ -57,7 +56,6 @@ struct StreamDebugger {
         }
     }
 }
-
 
 class StreamMonitor<T> {
     private let stream: AsyncThrowingStream<T, Error>
@@ -83,7 +81,6 @@ class StreamMonitor<T> {
                 do {
                     for try await value in stream {
                         chunkCount += 1
-
 
                         if let chatResponse = value as? ChatResponse {
                             byteCount += chatResponse.message.content.count
@@ -120,7 +117,6 @@ class StreamMonitor<T> {
     }
 }
 
-
 class NetworkMonitor {
     static let shared = NetworkMonitor()
 
@@ -148,7 +144,9 @@ class NetworkMonitor {
     }
 
     func printStatistics() {
-        print("\n\(EnhancedTerminalStyle.neonBlue)Network Statistics:\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.neonBlue)Network Statistics:\(EnhancedTerminalStyle.reset)"
+        )
         print("  Requests sent: \(requestCount)")
         print("  Responses received: \(responseCount)")
         print("  Bytes sent: \(formatBytes(totalBytesSent))")
@@ -169,7 +167,6 @@ class NetworkMonitor {
     }
 }
 
-
 struct StreamTestCommand: CommandProtocol {
     private let client: OllamaProtocol
 
@@ -186,27 +183,30 @@ struct StreamTestCommand: CommandProtocol {
             throw CLIError.invalidArgument("Invalid model name format")
         }
 
-
         StreamDebugger.configure(enabled: true, logPath: "stream_debug.log")
 
-        print("\(EnhancedTerminalStyle.neonBlue)Starting stream test with model: \(model.fullName)\(EnhancedTerminalStyle.reset)")
+        print(
+            "\(EnhancedTerminalStyle.neonBlue)Starting stream test with model: \(model.fullName)\(EnhancedTerminalStyle.reset)"
+        )
 
         guard let client = client as? OllamaClient else {
             throw CLIError.invalidArgument("Stream test requires OllamaClient")
         }
 
-
-        print("\n\(EnhancedTerminalStyle.neonGreen)Test 1: Simple generation\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.neonGreen)Test 1: Simple generation\(EnhancedTerminalStyle.reset)"
+        )
         try await testGeneration(client: client, model: model)
 
-
-        print("\n\(EnhancedTerminalStyle.neonGreen)Test 2: Chat streaming\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.neonGreen)Test 2: Chat streaming\(EnhancedTerminalStyle.reset)"
+        )
         try await testChat(client: client, model: model)
 
-
-        print("\n\(EnhancedTerminalStyle.neonGreen)Test 3: Concurrent streams\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.neonGreen)Test 3: Concurrent streams\(EnhancedTerminalStyle.reset)"
+        )
         try await testConcurrentStreams(client: client, model: model)
-
 
         NetworkMonitor.shared.printStatistics()
     }

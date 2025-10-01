@@ -1,7 +1,8 @@
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
 import Foundation
+
+#if canImport(FoundationNetworking)
+    import FoundationNetworking
+#endif
 
 private struct InvalidResponseTypeError: Error {}
 
@@ -106,7 +107,10 @@ public actor OllamaWebSearchClient: Sendable {
 
         guard (200...299).contains(httpResponse.statusCode) else {
             if let errorMessage = String(data: data, encoding: .utf8) {
-                throw OllamaError.httpError(statusCode: httpResponse.statusCode, message: errorMessage)
+                throw OllamaError.httpError(
+                    statusCode: httpResponse.statusCode,
+                    message: errorMessage
+                )
             }
             throw OllamaError.httpError(statusCode: httpResponse.statusCode)
         }
@@ -114,7 +118,6 @@ public actor OllamaWebSearchClient: Sendable {
         return try JSONDecoder().decode(R.self, from: data)
     }
 }
-
 
 extension OllamaWebSearchClient {
     /// Tool definition for web search function calling.
@@ -132,7 +135,8 @@ extension OllamaWebSearchClient {
         type: "function",
         function: FunctionDefinition(
             name: "web_search",
-            description: "Search the web for current information about a query. Returns relevant web pages with titles, URLs, and content snippets.",
+            description:
+                "Search the web for current information about a query. Returns relevant web pages with titles, URLs, and content snippets.",
             parameters: Parameters(
                 type: "object",
                 properties: [
@@ -143,7 +147,7 @@ extension OllamaWebSearchClient {
                     "max_results": PropertyDefinition(
                         type: "integer",
                         description: "Maximum number of results to return (default 5, maximum 10)"
-                    )
+                    ),
                 ],
                 required: ["query"]
             )
@@ -165,7 +169,8 @@ extension OllamaWebSearchClient {
         type: "function",
         function: FunctionDefinition(
             name: "web_fetch",
-            description: "Fetch and extract the full content from a specific web page URL. Returns the page title, main content, and all links found on the page.",
+            description:
+                "Fetch and extract the full content from a specific web page URL. Returns the page title, main content, and all links found on the page.",
             parameters: Parameters(
                 type: "object",
                 properties: [

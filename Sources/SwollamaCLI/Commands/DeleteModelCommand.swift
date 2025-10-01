@@ -19,7 +19,8 @@ struct DeleteModelCommand: CommandProtocol {
 
         print("Are you sure you want to delete model: \(model.fullName)? (y/N)")
         guard let response = readLine()?.lowercased(),
-              response == "y" || response == "yes" else {
+            response == "y" || response == "yes"
+        else {
             print("Operation cancelled.")
             return
         }

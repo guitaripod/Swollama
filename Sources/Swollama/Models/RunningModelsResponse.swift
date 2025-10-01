@@ -1,10 +1,8 @@
 import Foundation
 
-
 struct RunningModelsResponse: Codable {
     let models: [RunningModelInfo]
 }
-
 
 /// Information about a currently running model.
 ///

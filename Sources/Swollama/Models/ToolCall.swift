@@ -12,7 +12,6 @@ public struct ToolCall: Codable, Sendable {
     }
 }
 
-
 /// Details of a function call.
 ///
 /// Contains the function name and arguments as a JSON string.
@@ -38,7 +37,8 @@ public struct FunctionCall: Codable, Sendable {
 
         if let argumentsString = try? container.decode(String.self, forKey: .arguments) {
             arguments = argumentsString
-        } else if let argumentsDict = try? container.decode([String: Any].self, forKey: .arguments) {
+        } else if let argumentsDict = try? container.decode([String: Any].self, forKey: .arguments)
+        {
             let data = try JSONSerialization.data(withJSONObject: argumentsDict)
             arguments = String(data: data, encoding: .utf8) ?? "{}"
         } else {
@@ -51,8 +51,9 @@ public struct FunctionCall: Codable, Sendable {
         try container.encode(name, forKey: .name)
 
         if let data = arguments.data(using: .utf8),
-           let jsonObject = try? JSONSerialization.jsonObject(with: data),
-           let dictionary = jsonObject as? [String: Any] {
+            let jsonObject = try? JSONSerialization.jsonObject(with: data),
+            let dictionary = jsonObject as? [String: Any]
+        {
             try container.encode(dictionary, forKey: .arguments)
         } else {
             try container.encode(arguments, forKey: .arguments)

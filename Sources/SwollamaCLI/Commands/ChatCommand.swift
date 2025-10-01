@@ -1,19 +1,16 @@
 import Foundation
 import Swollama
 
-
 enum TerminalStyle {
     static let reset = "\u{001B}[0m"
     static let bold = "\u{001B}[1m"
     static let dim = "\u{001B}[2m"
-
 
     static let neonPink = "\u{001B}[38;2;255;20;147m"
     static let neonBlue = "\u{001B}[38;2;0;255;255m"
     static let neonGreen = "\u{001B}[38;2;0;255;127m"
     static let neonYellow = "\u{001B}[38;2;255;215;0m"
     static let mutedPurple = "\u{001B}[38;2;147;112;219m"
-
 
     static let bgDark = "\u{001B}[48;2;25;25;35m"
 }
@@ -30,15 +27,29 @@ struct ChatCommand: CommandProtocol {
     }
 
     private func printHeader(model: OllamaModelName) {
-        print("\n\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╔════════════════════════════════════════╗\(TerminalStyle.reset)")
-        print("\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)║\(TerminalStyle.neonPink) ChatBot Interface: \(TerminalStyle.neonGreen)\(model.fullName)\(TerminalStyle.neonBlue) ║\(TerminalStyle.reset)")
-        print("\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╚════════════════════════════════════════╝\(TerminalStyle.reset)\n")
+        print(
+            "\n\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╔════════════════════════════════════════╗\(TerminalStyle.reset)"
+        )
+        print(
+            "\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)║\(TerminalStyle.neonPink) ChatBot Interface: \(TerminalStyle.neonGreen)\(model.fullName)\(TerminalStyle.neonBlue) ║\(TerminalStyle.reset)"
+        )
+        print(
+            "\(TerminalStyle.bgDark)\(TerminalStyle.neonBlue)╚════════════════════════════════════════╝\(TerminalStyle.reset)\n"
+        )
 
         print("\(TerminalStyle.mutedPurple)Available Commands:")
-        print("• Type '\(TerminalStyle.neonYellow)exit\(TerminalStyle.mutedPurple)' or '\(TerminalStyle.neonYellow)quit\(TerminalStyle.mutedPurple)' to end the conversation")
-        print("• Type '\(TerminalStyle.neonYellow)clear\(TerminalStyle.mutedPurple)' to start a new conversation")
-        print("• Type '\(TerminalStyle.neonYellow)/system <message>\(TerminalStyle.mutedPurple)' to set a system message\(TerminalStyle.reset)")
-        print("\(TerminalStyle.neonBlue)═══════════════════════════════════════════════\(TerminalStyle.reset)\n")
+        print(
+            "• Type '\(TerminalStyle.neonYellow)exit\(TerminalStyle.mutedPurple)' or '\(TerminalStyle.neonYellow)quit\(TerminalStyle.mutedPurple)' to end the conversation"
+        )
+        print(
+            "• Type '\(TerminalStyle.neonYellow)clear\(TerminalStyle.mutedPurple)' to start a new conversation"
+        )
+        print(
+            "• Type '\(TerminalStyle.neonYellow)/system <message>\(TerminalStyle.mutedPurple)' to set a system message\(TerminalStyle.reset)"
+        )
+        print(
+            "\(TerminalStyle.neonBlue)═══════════════════════════════════════════════\(TerminalStyle.reset)\n"
+        )
     }
 
     private func printTimestamp() {
@@ -73,7 +84,9 @@ struct ChatCommand: CommandProtocol {
 
             switch input.lowercased() {
             case "exit", "quit":
-                print("\n\(TerminalStyle.neonPink)Goodbye! Chat session ended.\(TerminalStyle.reset)")
+                print(
+                    "\n\(TerminalStyle.neonPink)Goodbye! Chat session ended.\(TerminalStyle.reset)"
+                )
                 return
             case "clear":
                 clearScreen()
@@ -87,7 +100,9 @@ struct ChatCommand: CommandProtocol {
                     let systemMessage = String(input.dropFirst(8))
                     messages = messages.filter { $0.role != .system }
                     messages.insert(ChatMessage(role: .system, content: systemMessage), at: 0)
-                    print("\n\(TerminalStyle.neonYellow)System message updated.\(TerminalStyle.reset)")
+                    print(
+                        "\n\(TerminalStyle.neonYellow)System message updated.\(TerminalStyle.reset)"
+                    )
                     continue
                 }
 
@@ -99,7 +114,9 @@ struct ChatCommand: CommandProtocol {
             fflush(stdout)
 
             guard let client = client as? OllamaClient else {
-                print("\(TerminalStyle.neonPink)Error: Chat functionality requires OllamaClient\(TerminalStyle.reset)")
+                print(
+                    "\(TerminalStyle.neonPink)Error: Chat functionality requires OllamaClient\(TerminalStyle.reset)"
+                )
                 return
             }
 
@@ -125,37 +142,42 @@ struct ChatCommand: CommandProtocol {
                     }
                 }
 
-                print("\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)")
+                print(
+                    "\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)"
+                )
 
             } catch {
-                print("\n\(TerminalStyle.neonPink)Error during chat: \(error)\(TerminalStyle.reset)")
+                print(
+                    "\n\(TerminalStyle.neonPink)Error during chat: \(error)\(TerminalStyle.reset)"
+                )
                 if let ollamaError = error as? OllamaError {
-                    let errorMessage = switch ollamaError {
-                    case .modelNotFound:
-                        "Model '\(model.fullName)' not found. Please check the model name and try again."
-                    case .serverError(let message):
-                        "Server error: \(message)"
-                    case .networkError(let underlying):
-                        "Network error: \(underlying.localizedDescription)"
-                    case .invalidResponse:
-                        "Invalid response from server"
-                    case .invalidParameters(let message):
-                        "Invalid parameters: \(message)"
-                    case .decodingError(let error):
-                        "Error decoding response: \(error.localizedDescription)"
-                    case .unexpectedStatusCode(let code):
-                        "Unexpected status code: \(code)"
-                    case .httpError(let statusCode, let message):
-                        if let message = message {
-                            "HTTP error \(statusCode): \(message)"
-                        } else {
-                            "HTTP error \(statusCode)"
+                    let errorMessage =
+                        switch ollamaError {
+                        case .modelNotFound:
+                            "Model '\(model.fullName)' not found. Please check the model name and try again."
+                        case .serverError(let message):
+                            "Server error: \(message)"
+                        case .networkError(let underlying):
+                            "Network error: \(underlying.localizedDescription)"
+                        case .invalidResponse:
+                            "Invalid response from server"
+                        case .invalidParameters(let message):
+                            "Invalid parameters: \(message)"
+                        case .decodingError(let error):
+                            "Error decoding response: \(error.localizedDescription)"
+                        case .unexpectedStatusCode(let code):
+                            "Unexpected status code: \(code)"
+                        case .httpError(let statusCode, let message):
+                            if let message = message {
+                                "HTTP error \(statusCode): \(message)"
+                            } else {
+                                "HTTP error \(statusCode)"
+                            }
+                        case .cancelled:
+                            "Cancelled"
+                        case .fileError(_):
+                            "File error"
                         }
-                    case .cancelled:
-                        "Cancelled"
-                    case .fileError(_):
-                        "File error"
-                    }
                     print("\(TerminalStyle.neonPink)\(errorMessage)\(TerminalStyle.reset)")
                 }
             }

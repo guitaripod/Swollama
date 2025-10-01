@@ -125,7 +125,7 @@ public actor OllamaAgent {
                             options: ChatOptions(
                                 tools: [
                                     OllamaWebSearchClient.webSearchTool,
-                                    OllamaWebSearchClient.webFetchTool
+                                    OllamaWebSearchClient.webFetchTool,
                                 ],
                                 modelOptions: self.configuration.modelOptions,
                                 think: self.configuration.enableThinking
@@ -176,23 +176,29 @@ public actor OllamaAgent {
 
                         if let toolCalls = final.toolCalls, !toolCalls.isEmpty {
                             for toolCall in toolCalls {
-                                continuation.yield(.toolCall(
-                                    name: toolCall.function.name,
-                                    arguments: toolCall.function.arguments
-                                ))
+                                continuation.yield(
+                                    .toolCall(
+                                        name: toolCall.function.name,
+                                        arguments: toolCall.function.arguments
+                                    )
+                                )
 
                                 let result = try await self.executeToolCall(toolCall)
                                 let truncated = self.truncateIfNeeded(result)
 
-                                continuation.yield(.toolResult(
-                                    name: toolCall.function.name,
-                                    content: truncated
-                                ))
+                                continuation.yield(
+                                    .toolResult(
+                                        name: toolCall.function.name,
+                                        content: truncated
+                                    )
+                                )
 
-                                messages.append(ChatMessage(
-                                    role: .tool,
-                                    content: truncated
-                                ))
+                                messages.append(
+                                    ChatMessage(
+                                        role: .tool,
+                                        content: truncated
+                                    )
+                                )
                             }
                         } else {
                             if !final.content.isEmpty {
@@ -204,7 +210,9 @@ public actor OllamaAgent {
                         }
                     }
 
-                    throw OllamaError.invalidParameters("Agent reached maximum iterations (\(self.configuration.maxIterations)) without completion")
+                    throw OllamaError.invalidParameters(
+                        "Agent reached maximum iterations (\(self.configuration.maxIterations)) without completion"
+                    )
                 } catch {
                     continuation.finish(throwing: error)
                 }

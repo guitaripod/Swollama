@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 struct TestCommand: CommandProtocol {
     private let client: OllamaProtocol
 
@@ -80,18 +79,22 @@ struct TestCommand: CommandProtocol {
             properties: [
                 "name": JSONSchemaProperty(type: "string", description: "The person's name"),
                 "age": JSONSchemaProperty(type: "integer", description: "The person's age"),
-                "available": JSONSchemaProperty(type: "boolean", description: "Whether the person is available"),
+                "available": JSONSchemaProperty(
+                    type: "boolean",
+                    description: "Whether the person is available"
+                ),
                 "skills": JSONSchemaProperty(
                     type: "array",
                     items: JSONSchemaProperty(type: "string")
-                )
+                ),
             ],
             required: ["name", "age", "available"]
         )
 
         let request = GenerateRequest(
             model: model.fullName,
-            prompt: "Tell me about a fictional software developer named Alex who is 28 years old. Include their availability and skills. Respond using JSON.",
+            prompt:
+                "Tell me about a fictional software developer named Alex who is 28 years old. Include their availability and skills. Respond using JSON.",
             format: .jsonSchema(schema),
             stream: false
         )
@@ -104,9 +107,9 @@ struct TestCommand: CommandProtocol {
             print("Response:")
             print(response.response)
 
-
             if let data = response.response.data(using: .utf8),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            {
                 print("\n✅ Valid JSON with keys: \(json.keys.sorted())")
             }
         } catch {
@@ -120,7 +123,8 @@ struct TestCommand: CommandProtocol {
 
         let request = GenerateRequest(
             model: model.fullName,
-            prompt: "What are the primary colors? List them in a JSON object with a 'colors' array. Respond using JSON.",
+            prompt:
+                "What are the primary colors? List them in a JSON object with a 'colors' array. Respond using JSON.",
             format: .json,
             stream: false
         )
@@ -133,9 +137,9 @@ struct TestCommand: CommandProtocol {
             print("Response:")
             print(response.response)
 
-
             if let data = response.response.data(using: .utf8),
-               let _ = try? JSONSerialization.jsonObject(with: data) {
+                (try? JSONSerialization.jsonObject(with: data)) != nil
+            {
                 print("\n✅ Valid JSON response")
             } else {
                 print("\n⚠️  Response may not be valid JSON")
@@ -151,7 +155,11 @@ struct TestCommand: CommandProtocol {
         print("Note: This requires a thinking-capable model like deepseek-r1\n")
 
         let messages = [
-            ChatMessage(role: .user, content: "Can you solve this step by step: If a train travels 120 miles in 2 hours, how far will it travel in 5 hours at the same speed?")
+            ChatMessage(
+                role: .user,
+                content:
+                    "Can you solve this step by step: If a train travels 120 miles in 2 hours, how far will it travel in 5 hours at the same speed?"
+            )
         ]
 
         let request = ChatRequest(
@@ -185,8 +193,8 @@ struct TestCommand: CommandProtocol {
         print("Model: \(model.fullName)\n")
         print("Note: This requires a multimodal model like llava\n")
 
-
-        let testImageBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        let testImageBase64 =
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
 
         let messages = [
             ChatMessage(
@@ -232,7 +240,7 @@ struct TestCommand: CommandProtocol {
                             type: "string",
                             description: "The temperature unit",
                             enumValues: ["celsius", "fahrenheit"]
-                        )
+                        ),
                     ],
                     required: ["location"]
                 )
@@ -297,7 +305,6 @@ struct TestCommand: CommandProtocol {
             print("❌ Error: \(error)")
         }
     }
-
 
     private func generateSingle(_ request: GenerateRequest) async throws -> GenerateResponse {
         let options = GenerationOptions(
@@ -375,37 +382,39 @@ struct TestCommand: CommandProtocol {
     }
 
     private func printTestHelp() {
-        print("""
-        Usage: swollama test [test-type] [options]
+        print(
+            """
+            Usage: swollama test [test-type] [options]
 
-        Test new Ollama API features.
+            Test new Ollama API features.
 
-        Test Types:
-            structured    Test structured output with JSON Schema
-            thinking      Test thinking model support
-            json          Test JSON mode
-            images        Test image input (multimodal)
-            tools         Test tool/function calling
-            suffix        Test suffix parameter (code completion)
-            all           Run all tests (default)
+            Test Types:
+                structured    Test structured output with JSON Schema
+                thinking      Test thinking model support
+                json          Test JSON mode
+                images        Test image input (multimodal)
+                tools         Test tool/function calling
+                suffix        Test suffix parameter (code completion)
+                all           Run all tests (default)
 
-        Options:
-            --model, -m <model>    Model to use (default: llama3.2)
-            --test, -t <type>      Test type to run
-            --help, -h             Show this help message
+            Options:
+                --model, -m <model>    Model to use (default: llama3.2)
+                --test, -t <type>      Test type to run
+                --help, -h             Show this help message
 
-        Examples:
-            # Run all tests
-            swollama test
+            Examples:
+                # Run all tests
+                swollama test
 
-            # Test structured output with a specific model
-            swollama test structured --model llama3.1
+                # Test structured output with a specific model
+                swollama test structured --model llama3.1
 
-            # Test thinking mode with deepseek-r1
-            swollama test thinking --model deepseek-r1
+                # Test thinking mode with deepseek-r1
+                swollama test thinking --model deepseek-r1
 
-            # Test multimodal with llava
-            swollama test images --model llava
-        """)
+                # Test multimodal with llava
+                swollama test images --model llava
+            """
+        )
     }
 }

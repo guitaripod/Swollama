@@ -1,6 +1,5 @@
 import Foundation
 
-
 public struct ChatRequest: Codable, Sendable {
 
     public let model: String
@@ -45,7 +44,6 @@ public struct ChatRequest: Codable, Sendable {
     }
 }
 
-
 /// A message in a chat conversation.
 ///
 /// Represents a single message with a role (system, user, assistant, or tool), text content,
@@ -85,7 +83,6 @@ public struct ChatMessage: Codable, Sendable {
         self.thinking = thinking
     }
 }
-
 
 /// The role of a message sender in a chat conversation.
 public enum MessageRole: String, Codable, Sendable {

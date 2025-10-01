@@ -4,7 +4,12 @@ import Foundation
 ///
 /// Used to track the progress of model pulls, pushes, and creation operations.
 public struct OperationProgress: Codable, Sendable {
-    public init(status: String, digest: String? = nil, total: UInt64? = nil, completed: UInt64? = nil) {
+    public init(
+        status: String,
+        digest: String? = nil,
+        total: UInt64? = nil,
+        completed: UInt64? = nil
+    ) {
         self.status = status
         self.digest = digest
         self.total = total

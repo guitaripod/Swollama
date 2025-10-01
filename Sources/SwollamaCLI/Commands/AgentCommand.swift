@@ -53,7 +53,8 @@ struct AgentCommand: CommandProtocol {
             case .toolCall(let name, let argsJSON):
                 print("🔧 Tool Call: \(name)")
                 if let argsData = argsJSON.data(using: .utf8),
-                   let args = try? JSONSerialization.jsonObject(with: argsData) as? [String: Any] {
+                    let args = try? JSONSerialization.jsonObject(with: argsData) as? [String: Any]
+                {
                     if let query = args["query"] as? String {
                         print("   Query: \(query)")
                     }

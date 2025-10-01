@@ -1,15 +1,19 @@
 import Foundation
 
-
 public struct EmbeddingRequest: Codable, Sendable {
-    public init(model: String, input: EmbeddingInput, truncate: Bool? = nil, options: ModelOptions? = nil, keepAlive: TimeInterval? = nil) {
+    public init(
+        model: String,
+        input: EmbeddingInput,
+        truncate: Bool? = nil,
+        options: ModelOptions? = nil,
+        keepAlive: TimeInterval? = nil
+    ) {
         self.model = model
         self.input = input
         self.truncate = truncate
         self.options = options
         self.keepAlive = keepAlive
     }
-
 
     public let model: String
 
@@ -26,7 +30,6 @@ public struct EmbeddingRequest: Codable, Sendable {
         case keepAlive = "keep_alive"
     }
 }
-
 
 /// Input for embedding generation.
 ///

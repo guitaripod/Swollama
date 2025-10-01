@@ -36,13 +36,6 @@ public struct OllamaConfiguration {
     /// immediately, or -1 to keep loaded indefinitely.
     public let defaultKeepAlive: TimeInterval
 
-
-
-
-
-
-
-
     /// Creates a new configuration with the specified settings.
     ///
     /// - Parameters:

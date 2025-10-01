@@ -1,6 +1,5 @@
 import Foundation
 
-
 public struct ShowModelRequest: Codable, Sendable {
 
     public let model: String

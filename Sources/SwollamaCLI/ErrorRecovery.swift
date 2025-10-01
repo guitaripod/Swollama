@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 enum RecoveryStrategy {
     case retry(attempts: Int, delay: TimeInterval)
     case fallback(model: OllamaModelName)
@@ -10,7 +9,6 @@ enum RecoveryStrategy {
     case reconnect
     case switchHost(String)
 }
-
 
 class ErrorRecoveryHandler {
     private let client: OllamaProtocol
@@ -21,14 +19,12 @@ class ErrorRecoveryHandler {
         self.client = client
     }
 
-
     func suggestRecovery(for error: Error) -> RecoveryStrategy {
 
         errorHistory.append((Date(), error))
         if errorHistory.count > maxHistorySize {
             errorHistory.removeFirst()
         }
-
 
         if let ollamaError = error as? OllamaError {
             switch ollamaError {
@@ -43,7 +39,9 @@ class ErrorRecoveryHandler {
 
             case .modelNotFound:
 
-                return .fallback(model: OllamaModelName(namespace: nil, name: "llama2", tag: "latest"))
+                return .fallback(
+                    model: OllamaModelName(namespace: nil, name: "llama2", tag: "latest")
+                )
 
             case .serverError:
                 return .retry(attempts: 2, delay: 5.0)
@@ -66,10 +64,8 @@ class ErrorRecoveryHandler {
             }
         }
 
-
         return .retry(attempts: 1, delay: 1.0)
     }
-
 
     func executeRecovery(
         strategy: RecoveryStrategy,
@@ -83,7 +79,9 @@ class ErrorRecoveryHandler {
                     return
                 } catch {
                     if attempt < attempts {
-                        print("\n\(EnhancedTerminalStyle.orange)Retry attempt \(attempt)/\(attempts) in \(Int(delay))s...\(EnhancedTerminalStyle.reset)")
+                        print(
+                            "\n\(EnhancedTerminalStyle.orange)Retry attempt \(attempt)/\(attempts) in \(Int(delay))s...\(EnhancedTerminalStyle.reset)"
+                        )
                         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     } else {
                         throw error
@@ -92,12 +90,16 @@ class ErrorRecoveryHandler {
             }
 
         case .fallback(let model):
-            print("\n\(EnhancedTerminalStyle.orange)Switching to fallback model: \(model.fullName)\(EnhancedTerminalStyle.reset)")
+            print(
+                "\n\(EnhancedTerminalStyle.orange)Switching to fallback model: \(model.fullName)\(EnhancedTerminalStyle.reset)"
+            )
 
             throw RecoveryError.fallbackRequired(model: model)
 
         case .skip:
-            print("\n\(EnhancedTerminalStyle.orange)Skipping operation due to error\(EnhancedTerminalStyle.reset)")
+            print(
+                "\n\(EnhancedTerminalStyle.orange)Skipping operation due to error\(EnhancedTerminalStyle.reset)"
+            )
             return
 
         case .abort:
@@ -105,45 +107,47 @@ class ErrorRecoveryHandler {
             throw RecoveryError.aborted
 
         case .reconnect:
-            print("\n\(EnhancedTerminalStyle.orange)Attempting to reconnect...\(EnhancedTerminalStyle.reset)")
+            print(
+                "\n\(EnhancedTerminalStyle.orange)Attempting to reconnect...\(EnhancedTerminalStyle.reset)"
+            )
             try await reconnect()
             try await operation()
 
         case .switchHost(let newHost):
-            print("\n\(EnhancedTerminalStyle.orange)Switching to host: \(newHost)\(EnhancedTerminalStyle.reset)")
+            print(
+                "\n\(EnhancedTerminalStyle.orange)Switching to host: \(newHost)\(EnhancedTerminalStyle.reset)"
+            )
             throw RecoveryError.hostSwitchRequired(host: newHost)
         }
     }
-
 
     private func reconnect() async throws {
         guard let client = client as? OllamaClient else {
             throw RecoveryError.reconnectFailed
         }
 
-
         _ = try await client.listModels()
-        print("\(EnhancedTerminalStyle.neonGreen)Reconnected successfully\(EnhancedTerminalStyle.reset)")
+        print(
+            "\(EnhancedTerminalStyle.neonGreen)Reconnected successfully\(EnhancedTerminalStyle.reset)"
+        )
     }
-
 
     private func countRecentNetworkErrors(within seconds: TimeInterval) -> Int {
         let cutoffDate = Date().addingTimeInterval(-seconds)
         return errorHistory.filter { date, error in
             if let ollamaError = error as? OllamaError,
-               case .networkError = ollamaError {
+                case .networkError = ollamaError
+            {
                 return date > cutoffDate
             }
             return false
         }.count
     }
 
-
     func clearHistory() {
         errorHistory.removeAll()
     }
 }
-
 
 enum RecoveryError: LocalizedError {
     case fallbackRequired(model: OllamaModelName)
@@ -165,7 +169,6 @@ enum RecoveryError: LocalizedError {
     }
 }
 
-
 class ResilientChatSession {
     private let client: OllamaProtocol
     private let recoveryHandler: ErrorRecoveryHandler
@@ -179,13 +182,11 @@ class ResilientChatSession {
         self.recoveryHandler = ErrorRecoveryHandler(client: client)
     }
 
-
     func sendMessage(_ content: String) async throws -> String {
         messages.append(ChatMessage(role: .user, content: content))
 
         var lastError: Error?
         var response = ""
-
 
         for _ in 0..<3 {
             do {
@@ -195,15 +196,12 @@ class ResilientChatSession {
             } catch {
                 lastError = error
 
-
                 let strategy = recoveryHandler.suggestRecovery(for: error)
-
 
                 if case .fallback(let fallbackModel) = strategy {
                     currentModel = fallbackModel
                     continue
                 }
-
 
                 do {
                     try await recoveryHandler.executeRecovery(strategy: strategy) {
@@ -220,7 +218,6 @@ class ResilientChatSession {
                 }
             }
         }
-
 
         throw lastError ?? RecoveryError.aborted
     }
@@ -247,17 +244,21 @@ class ResilientChatSession {
         return fullResponse
     }
 
-
     func promptForRecovery(error: Error) async -> RecoveryStrategy {
-        print("\n\(EnhancedTerminalStyle.red)Error occurred: \(error.localizedDescription)\(EnhancedTerminalStyle.reset)")
+        print(
+            "\n\(EnhancedTerminalStyle.red)Error occurred: \(error.localizedDescription)\(EnhancedTerminalStyle.reset)"
+        )
 
         let options: [(String, RecoveryStrategy)] = [
             ("Retry with current settings", .retry(attempts: 1, delay: 0)),
             ("Retry with delay", .retry(attempts: 3, delay: 2.0)),
-            ("Switch to llama2 model", .fallback(model: OllamaModelName(namespace: nil, name: "llama2", tag: "latest"))),
+            (
+                "Switch to llama2 model",
+                .fallback(model: OllamaModelName(namespace: nil, name: "llama2", tag: "latest"))
+            ),
             ("Skip this message", .skip),
             ("Reconnect to server", .reconnect),
-            ("Abort conversation", .abort)
+            ("Abort conversation", .abort),
         ]
 
         if let selection = inputHandler.selectOption(
@@ -270,7 +271,6 @@ class ResilientChatSession {
         return .abort
     }
 }
-
 
 class HealthMonitor {
     private let client: OllamaProtocol
@@ -298,13 +298,17 @@ class HealthMonitor {
             _ = try await client.listModels()
             if !isHealthy {
                 isHealthy = true
-                print("\n\(EnhancedTerminalStyle.neonGreen)Connection restored\(EnhancedTerminalStyle.reset)")
+                print(
+                    "\n\(EnhancedTerminalStyle.neonGreen)Connection restored\(EnhancedTerminalStyle.reset)"
+                )
             }
             lastCheckTime = Date()
         } catch {
             if isHealthy {
                 isHealthy = false
-                print("\n\(EnhancedTerminalStyle.red)Connection lost: \(error.localizedDescription)\(EnhancedTerminalStyle.reset)")
+                print(
+                    "\n\(EnhancedTerminalStyle.red)Connection lost: \(error.localizedDescription)\(EnhancedTerminalStyle.reset)"
+                )
             }
         }
     }

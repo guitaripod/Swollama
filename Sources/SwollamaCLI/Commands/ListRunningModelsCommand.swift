@@ -38,7 +38,6 @@ struct ListRunningModelsCommand: CommandProtocol {
         let now = Date()
         let timeInterval = date.timeIntervalSince(now)
 
-
         let relativeTime: String
         if timeInterval > 0 {
 
@@ -71,7 +70,6 @@ struct ListRunningModelsCommand: CommandProtocol {
                 relativeTime = "less than a minute ago"
             }
         }
-
 
         let absoluteFormatter = DateFormatter()
         absoluteFormatter.dateStyle = .medium

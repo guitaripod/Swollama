@@ -1,39 +1,5 @@
 import Foundation
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public struct CreateModelRequest: Codable, Sendable {
 
     public let model: String
@@ -85,13 +51,11 @@ public struct CreateModelRequest: Codable, Sendable {
     }
 }
 
-
 public enum QuantizationType: String, Codable, Sendable {
     case q4_K_M = "q4_K_M"
     case q4_K_S = "q4_K_S"
     case q8_0 = "q8_0"
 }
-
 
 public enum StringOrArray: Codable, Sendable {
     case string(String)
@@ -104,7 +68,10 @@ public enum StringOrArray: Codable, Sendable {
         } else if let arrayValue = try? container.decode([String].self) {
             self = .array(arrayValue)
         } else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected either a string or an array of strings")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Expected either a string or an array of strings"
+            )
         }
     }
 
@@ -118,7 +85,6 @@ public enum StringOrArray: Codable, Sendable {
         }
     }
 }
-
 
 public struct ModelfileParameters: Codable, Sendable {
     public let mirostat: Int?
@@ -185,7 +151,6 @@ public struct ModelfileParameters: Codable, Sendable {
         self.minP = minP
     }
 }
-
 
 public struct ModelfileMessage: Codable, Sendable {
     public let role: String

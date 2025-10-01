@@ -1,7 +1,6 @@
 import Foundation
 import Swollama
 
-
 struct VersionCommand: CommandProtocol {
     private let client: OllamaProtocol
 

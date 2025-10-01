@@ -16,7 +16,6 @@ public struct ToolDefinition: Codable, Sendable {
     }
 }
 
-
 /// Definition of a callable function.
 ///
 /// Describes a function that the model can invoke, including its name, purpose, and parameters.
@@ -41,7 +40,6 @@ public struct FunctionDefinition: Codable, Sendable {
     }
 }
 
-
 public struct Parameters: Codable, Sendable {
 
     public let type: String
@@ -60,7 +58,6 @@ public struct Parameters: Codable, Sendable {
         self.required = required
     }
 }
-
 
 public struct PropertyDefinition: Codable, Sendable {
 

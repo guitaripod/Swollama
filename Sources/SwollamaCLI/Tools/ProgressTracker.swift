@@ -1,13 +1,10 @@
 import Foundation
 import Swollama
 
-
 protocol ProgressTracker {
-
 
     func track(_ progress: AsyncThrowingStream<OperationProgress, Error>) async throws
 }
-
 
 struct DownloadPart: Identifiable {
     let id: String
@@ -27,9 +24,7 @@ struct DownloadPart: Identifiable {
     }
 }
 
-
 struct DefaultProgressTracker: ProgressTracker {
-
 
     private enum Constants {
         static let discoveryTimeout: TimeInterval = 0.5
@@ -41,17 +36,11 @@ struct DefaultProgressTracker: ProgressTracker {
         static let minProgressChange: Double = 0.1
     }
 
-
-
     private let terminalHelper: TerminalHelper
-
-
 
     init(terminalHelper: TerminalHelper = CachedTerminalHelper()) {
         self.terminalHelper = terminalHelper
     }
-
-
 
     func track(_ progress: AsyncThrowingStream<OperationProgress, Error>) async throws {
         let barWidth = calculateBarWidth()
@@ -59,8 +48,6 @@ struct DefaultProgressTracker: ProgressTracker {
 
         try await handleInitialDiscovery(progress, parts: &parts, barWidth: barWidth)
     }
-
-
 
     private func calculateBarWidth() -> Int {
         max(10, min(terminalHelper.terminalWidth - 65, Constants.minBarWidth))
@@ -74,7 +61,6 @@ struct DefaultProgressTracker: ProgressTracker {
         var updates: [OperationProgress] = []
         let discoveryStart = Date()
 
-
         for try await update in progress {
             updates.append(update)
 
@@ -83,12 +69,10 @@ struct DefaultProgressTracker: ProgressTracker {
                 drawPart(newPart, barWidth: barWidth)
             }
 
-
             if Date().timeIntervalSince(discoveryStart) > Constants.discoveryTimeout {
                 break
             }
         }
-
 
         await processUpdates(updates, parts: &parts, barWidth: barWidth)
         try await continueTracking(progress, parts: &parts, barWidth: barWidth)
@@ -96,7 +80,8 @@ struct DefaultProgressTracker: ProgressTracker {
 
     private func createPartIfNeeded(from update: OperationProgress) -> DownloadPart? {
         guard let digest = update.digest,
-              let total = update.total else { return nil }
+            let total = update.total
+        else { return nil }
 
         return DownloadPart(
             id: digest,
@@ -135,19 +120,19 @@ struct DefaultProgressTracker: ProgressTracker {
         barWidth: Int
     ) {
         guard let digest = update.digest,
-              let completed = update.completed else { return }
+            let completed = update.completed
+        else { return }
 
         if var part = parts[digest] {
             part.completed = completed
-
 
             let now = Date()
             let timeSinceLastUpdate = now.timeIntervalSince(part.lastUpdateTime)
             let progressDelta = abs(part.progress - part.lastRenderedProgress)
 
-
-            if timeSinceLastUpdate >= Constants.minUpdateInterval &&
-               (progressDelta >= Constants.minProgressChange || part.isComplete) {
+            if timeSinceLastUpdate >= Constants.minUpdateInterval
+                && (progressDelta >= Constants.minProgressChange || part.isComplete)
+            {
                 part.lastUpdateTime = now
                 part.lastRenderedProgress = part.progress
                 parts[digest] = part
@@ -195,7 +180,6 @@ struct DefaultProgressTracker: ProgressTracker {
     }
 }
 
-
 class CachedTerminalHelper: TerminalHelper {
     private static var cachedWidth: Int?
     private static var lastCheck: Date?
@@ -205,8 +189,9 @@ class CachedTerminalHelper: TerminalHelper {
         let now = Date()
 
         if let cached = Self.cachedWidth,
-           let lastCheck = Self.lastCheck,
-           now.timeIntervalSince(lastCheck) < Self.cacheDuration {
+            let lastCheck = Self.lastCheck,
+            now.timeIntervalSince(lastCheck) < Self.cacheDuration
+        {
             return cached
         }
 
@@ -222,9 +207,7 @@ class CachedTerminalHelper: TerminalHelper {
     }
 }
 
-
 struct ProgressBarFormatter {
-
 
     private enum Constants {
         static let greenColor = "\u{1B}[32m"
@@ -239,8 +222,6 @@ struct ProgressBarFormatter {
         static let megabyteDivisor = 1_048_576.0
         static let etaRoundingInterval = 5
     }
-
-
 
     static func create(
         percentage: Double,
@@ -258,17 +239,18 @@ struct ProgressBarFormatter {
         let sizeInfo = createSizeInfo(completed: completed, total: total)
         let additionalInfo = createAdditionalInfo(speed: speed, eta: eta, isCompleted: isCompleted)
 
-        return "[\(filled)\(empty)] \(Constants.cyanColor)\(percentStr)\(Constants.resetColor) \(sizeInfo) \(additionalInfo) [\(digest)]"
+        return
+            "[\(filled)\(empty)] \(Constants.cyanColor)\(percentStr)\(Constants.resetColor) \(sizeInfo) \(additionalInfo) [\(digest)]"
     }
-
-
 
     private static func createProgressSegments(percentage: Double, width: Int) -> (String, String) {
         let clampedPercentage = min(max(percentage, 0), 100)
         let filledWidth = Int(Double(width) * clampedPercentage / 100.0)
         let emptyWidth = max(0, width - filledWidth)
 
-        let filled = Constants.greenColor + String(repeating: Constants.filledChar, count: filledWidth) + Constants.resetColor
+        let filled =
+            Constants.greenColor + String(repeating: Constants.filledChar, count: filledWidth)
+            + Constants.resetColor
         let empty = String(repeating: Constants.emptyChar, count: emptyWidth)
 
         return (filled, empty)
@@ -282,7 +264,8 @@ struct ProgressBarFormatter {
         if isCompleted {
             return "✓ Complete"
         } else if speed > 0.1 {
-            return "\(Constants.yellowColor)\(formatSpeed(bytesPerSecond: speed))\(Constants.resetColor) \(Constants.magentaColor)\(formatETA(seconds: eta))\(Constants.resetColor)"
+            return
+                "\(Constants.yellowColor)\(formatSpeed(bytesPerSecond: speed))\(Constants.resetColor) \(Constants.magentaColor)\(formatETA(seconds: eta))\(Constants.resetColor)"
         } else {
             return "initializing..."
         }
@@ -296,7 +279,9 @@ struct ProgressBarFormatter {
     private static func formatETA(seconds: Int) -> String {
         if seconds == 0 { return "calculating..." }
 
-        let roundedSeconds = ((seconds + Constants.etaRoundingInterval - 1) / Constants.etaRoundingInterval) * Constants.etaRoundingInterval
+        let roundedSeconds =
+            ((seconds + Constants.etaRoundingInterval - 1) / Constants.etaRoundingInterval)
+            * Constants.etaRoundingInterval
         let hours = roundedSeconds / 3600
         let minutes = (roundedSeconds % 3600) / 60
         let remainingSeconds = roundedSeconds % 60
