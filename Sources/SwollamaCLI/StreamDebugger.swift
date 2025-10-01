@@ -17,7 +17,7 @@ struct StreamDebugger {
 
         if enabled, let logPath = logPath {
             let url = URL(fileURLWithPath: logPath)
-            FileManager.default.createFile(atPath: logPath, contents: nil)
+            _ = FileManager.default.createFile(atPath: logPath, contents: nil)
             logFile = try? FileHandle(forWritingTo: url)
         }
     }
