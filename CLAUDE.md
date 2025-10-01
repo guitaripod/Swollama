@@ -62,7 +62,3 @@ for try await response in try await client.chat(messages: messages, model: model
 ## Testing
 
 Tests in `Tests/SwollamaTests/` - add tests when implementing features
-
-## Releases
-
-Create tag matching `v*.*.*` to trigger automated GitHub release (builds for macOS and Linux)
