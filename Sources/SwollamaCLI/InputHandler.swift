@@ -268,9 +268,9 @@ extension InputHandler {
             return true
         }
 
-        let errorMessage = range != nil ?
-            "Please enter a number between \(range!.lowerBound) and \(range!.upperBound)" :
-            "Please enter a valid number"
+        let errorMessage = range.map {
+            "Please enter a number between \($0.lowerBound) and \($0.upperBound)"
+        } ?? "Please enter a valid number"
 
         guard let input = readValidatedInput(
             prompt: prompt,
