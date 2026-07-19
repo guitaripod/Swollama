@@ -12,8 +12,8 @@ import Foundation
 /// ## Operations
 ///
 /// The protocol includes methods for:
-/// - **Generation**: ``generateText(prompt:model:options:)`` and ``chat(messages:model:options:)``
-/// - **Embeddings**: ``generateEmbeddings(input:model:options:)``
+/// - **Generation**: `generateText(prompt:model:options:)` and `chat(messages:model:options:)`
+/// - **Embeddings**: `generateEmbeddings(input:model:options:)`
 /// - **Model Management**: ``listModels()``, ``showModel(name:verbose:)``, ``pullModel(name:options:)``, ``pushModel(name:options:)``, ``copyModel(source:destination:)``, ``deleteModel(name:)``
 /// - **Running Models**: ``listRunningModels()``
 /// - **Model Creation**: ``createModel(_:)``
@@ -49,7 +49,7 @@ public protocol OllamaProtocol: Sendable {
     /// - Parameters:
     ///   - name: The model name to pull (e.g., "llama3.2:latest").
     ///   - options: Pull options including whether to allow insecure connections.
-    /// - Returns: An ``AsyncThrowingStream`` of ``OperationProgress`` objects tracking the download.
+    /// - Returns: An `AsyncThrowingStream` of ``OperationProgress`` objects tracking the download.
     /// - Throws: ``OllamaError`` if the pull operation fails.
     func pullModel(
         name: OllamaModelName,
@@ -64,7 +64,7 @@ public protocol OllamaProtocol: Sendable {
     /// - Parameters:
     ///   - name: The model name to push. Must include a namespace.
     ///   - options: Push options including whether to allow insecure connections.
-    /// - Returns: An ``AsyncThrowingStream`` of ``OperationProgress`` objects tracking the upload.
+    /// - Returns: An `AsyncThrowingStream` of ``OperationProgress`` objects tracking the upload.
     /// - Throws: ``OllamaError/invalidParameters(_:)`` if the model name lacks a namespace, or other ``OllamaError`` variants.
     func pushModel(
         name: OllamaModelName,
@@ -100,7 +100,7 @@ public protocol OllamaProtocol: Sendable {
     /// a base model, files, adapters, templates, and other configuration options.
     ///
     /// - Parameter request: A ``CreateModelRequest`` containing the model configuration.
-    /// - Returns: An ``AsyncThrowingStream`` of ``OperationProgress`` objects tracking creation progress.
+    /// - Returns: An `AsyncThrowingStream` of ``OperationProgress`` objects tracking creation progress.
     /// - Throws: ``OllamaError`` if the model creation fails.
     func createModel(_ request: CreateModelRequest) async throws -> AsyncThrowingStream<
         OperationProgress, Error

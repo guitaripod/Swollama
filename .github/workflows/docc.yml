@@ -18,26 +18,28 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.0"
       - id: pages
         name: Setup Pages
-        uses: actions/configure-pages@v4
-      - name: Select Xcode 15.1
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '15.1.0'
+        uses: actions/configure-pages@v5
       - name: Build DocC
+        env:
+          SWOLLAMA_DOCS: "1"
         run: |
-          swift package resolve;
-          xcodebuild docbuild -scheme Swollama -derivedDataPath /tmp/docbuild -destination 'generic/platform=iOS';
-          $(xcrun --find docc) process-archive \
-            transform-for-static-hosting /tmp/docbuild/Build/Products/Debug-iphoneos/Swollama.doccarchive \
-            --output-path docs \
-            --hosting-base-path 'Swollama';
-          echo "<script>window.location.href += \"/documentation/swollama\"</script>" > docs/index.html;
+          swift package --allow-writing-to-directory docs \
+            generate-documentation --target Swollama \
+            --disable-indexing \
+            --transform-for-static-hosting \
+            --hosting-base-path 'Swollama' \
+            --output-path docs
+          echo '<script>window.location.href += "/documentation/swollama"</script>' > docs/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

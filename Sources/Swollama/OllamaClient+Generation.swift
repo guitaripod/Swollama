@@ -33,7 +33,7 @@ extension OllamaClient {
     ///   - prompt: The text prompt to send to the model.
     ///   - model: The model name to use for generation.
     ///   - options: Generation options including system prompt, format, images, and model parameters. Defaults to ``GenerationOptions/default``.
-    /// - Returns: An ``AsyncThrowingStream`` of ``GenerateResponse`` objects. Each response contains incremental text and metadata.
+    /// - Returns: An `AsyncThrowingStream` of ``GenerateResponse`` objects. Each response contains incremental text and metadata.
     /// - Throws: ``OllamaError`` if the generation fails.
     public func generateText(
         prompt: String,
@@ -100,7 +100,7 @@ extension OllamaClient {
     ///   - messages: An array of ``ChatMessage`` objects representing the conversation history.
     ///   - model: The model name to use for the chat completion.
     ///   - options: Chat options including tools, format, and model parameters. Defaults to ``ChatOptions/default``.
-    /// - Returns: An ``AsyncThrowingStream`` of ``ChatResponse`` objects. Each response contains incremental message content and metadata.
+    /// - Returns: An `AsyncThrowingStream` of ``ChatResponse`` objects. Each response contains incremental message content and metadata.
     /// - Throws: ``OllamaError`` if the chat request fails.
     public func chat(
         messages: [ChatMessage],

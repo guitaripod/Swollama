@@ -122,7 +122,7 @@ public actor OllamaWebSearchClient: Sendable {
 extension OllamaWebSearchClient {
     /// Tool definition for web search function calling.
     ///
-    /// Provide this to ``ChatOptions/init(tools:format:modelOptions:keepAlive:think:)`` to enable
+    /// Provide this via ``ChatOptions`` `tools` to enable
     /// the model to search the web for current information.
     ///
     /// ## Example
@@ -156,7 +156,7 @@ extension OllamaWebSearchClient {
 
     /// Tool definition for web fetch function calling.
     ///
-    /// Provide this to ``ChatOptions/init(tools:format:modelOptions:keepAlive:think:)`` to enable
+    /// Provide this via ``ChatOptions`` `tools` to enable
     /// the model to fetch and extract full content from specific URLs.
     ///
     /// ## Example
