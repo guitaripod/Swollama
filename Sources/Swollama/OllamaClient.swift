@@ -74,7 +74,18 @@ public actor OllamaClient: OllamaProtocol {
         self.session = NetworkingSupport.createSession(configuration: config)
 
         self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .iso8601
+        self.decoder.dateDecodingStrategy = .custom { decoder in
+            let string = try decoder.singleValueContainer().decode(String.self)
+            guard let date = OllamaDate.parse(string) else {
+                throw DecodingError.dataCorrupted(
+                    DecodingError.Context(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Timestamp '\(string)' is not a valid RFC 3339 date"
+                    )
+                )
+            }
+            return date
+        }
 
         self.encoder = JSONEncoder()
         self.encoder.dateEncodingStrategy = .iso8601
@@ -90,7 +101,18 @@ public actor OllamaClient: OllamaProtocol {
         self.session = session
 
         self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .iso8601
+        self.decoder.dateDecodingStrategy = .custom { decoder in
+            let string = try decoder.singleValueContainer().decode(String.self)
+            guard let date = OllamaDate.parse(string) else {
+                throw DecodingError.dataCorrupted(
+                    DecodingError.Context(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Timestamp '\(string)' is not a valid RFC 3339 date"
+                    )
+                )
+            }
+            return date
+        }
 
         self.encoder = JSONEncoder()
         self.encoder.dateEncodingStrategy = .iso8601

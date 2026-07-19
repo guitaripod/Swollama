@@ -38,6 +38,15 @@ public struct ChatResponse: Codable, Sendable {
     /// Time taken to generate the response in nanoseconds. Only present when `done` is `true`.
     public let evalDuration: UInt64?
 
+    /// Per-token log-probabilities, when `logprobs` was requested.
+    public let logprobs: [Logprob]?
+
+    /// The upstream cloud model name, when this response was proxied to a remote model.
+    public let remoteModel: String?
+
+    /// The upstream cloud host, when this response was proxied to a remote model.
+    public let remoteHost: String?
+
     private enum CodingKeys: String, CodingKey {
         case model
         case createdAt = "created_at"
@@ -50,6 +59,9 @@ public struct ChatResponse: Codable, Sendable {
         case promptEvalDuration = "prompt_eval_duration"
         case evalCount = "eval_count"
         case evalDuration = "eval_duration"
+        case logprobs
+        case remoteModel = "remote_model"
+        case remoteHost = "remote_host"
     }
 
     public init(from decoder: Decoder) throws {
@@ -65,30 +77,10 @@ public struct ChatResponse: Codable, Sendable {
         promptEvalDuration = try container.decodeIfPresent(UInt64.self, forKey: .promptEvalDuration)
         evalCount = try container.decodeIfPresent(Int.self, forKey: .evalCount)
         evalDuration = try container.decodeIfPresent(UInt64.self, forKey: .evalDuration)
+        logprobs = try container.decodeIfPresent([Logprob].self, forKey: .logprobs)
+        remoteModel = try container.decodeIfPresent(String.self, forKey: .remoteModel)
+        remoteHost = try container.decodeIfPresent(String.self, forKey: .remoteHost)
 
-        let dateString = try container.decode(String.self, forKey: .createdAt)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-
-        if let date = formatter.date(from: dateString) {
-            createdAt = date
-        } else {
-
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-            if let date = formatter.date(from: dateString) {
-                createdAt = date
-            } else {
-                throw DecodingError.dataCorrupted(
-                    DecodingError.Context(
-                        codingPath: container.codingPath + [CodingKeys.createdAt],
-                        debugDescription:
-                            "Date string '\(dateString)' does not match expected format",
-                        underlyingError: nil
-                    )
-                )
-            }
-        }
+        createdAt = try OllamaDate.decode(from: container, forKey: .createdAt)
     }
 }

@@ -14,6 +14,9 @@ public struct GenerateResponse: Codable, Sendable {
     /// The generated text content.
     public let response: String
 
+    /// The model's reasoning/thinking content, when `think` is enabled for a reasoning-capable model.
+    public let thinking: String?
+
     /// Whether this is the final chunk in a streamed response.
     public let done: Bool
 
@@ -41,10 +44,32 @@ public struct GenerateResponse: Codable, Sendable {
     /// Time taken to generate the response in nanoseconds. Only present when `done` is `true`.
     public let evalDuration: UInt64?
 
+    /// Tool calls emitted by the model, when the prompt provided tools and the model invoked them.
+    public let toolCalls: [ToolCall]?
+
+    /// Per-token log-probabilities, when `logprobs` was requested.
+    public let logprobs: [Logprob]?
+
+    /// Base64-encoded output image (image-generation models only).
+    public let image: String?
+
+    /// Progress numerator for image generation (diffusion steps completed).
+    public let completed: UInt64?
+
+    /// Progress denominator for image generation (total diffusion steps).
+    public let total: UInt64?
+
+    /// The upstream cloud model name, when this response was proxied to a remote model.
+    public let remoteModel: String?
+
+    /// The upstream cloud host, when this response was proxied to a remote model.
+    public let remoteHost: String?
+
     private enum CodingKeys: String, CodingKey {
         case model
         case createdAt = "created_at"
         case response
+        case thinking
         case done
         case doneReason = "done_reason"
         case context
@@ -54,6 +79,11 @@ public struct GenerateResponse: Codable, Sendable {
         case promptEvalDuration = "prompt_eval_duration"
         case evalCount = "eval_count"
         case evalDuration = "eval_duration"
+        case toolCalls = "tool_calls"
+        case logprobs
+        case image, completed, total
+        case remoteModel = "remote_model"
+        case remoteHost = "remote_host"
     }
 
     public init(from decoder: Decoder) throws {
@@ -61,6 +91,7 @@ public struct GenerateResponse: Codable, Sendable {
 
         model = try container.decode(String.self, forKey: .model)
         response = try container.decode(String.self, forKey: .response)
+        thinking = try container.decodeIfPresent(String.self, forKey: .thinking)
         done = try container.decode(Bool.self, forKey: .done)
         doneReason = try container.decodeIfPresent(String.self, forKey: .doneReason)
         context = try container.decodeIfPresent([Int].self, forKey: .context)
@@ -70,30 +101,14 @@ public struct GenerateResponse: Codable, Sendable {
         promptEvalDuration = try container.decodeIfPresent(UInt64.self, forKey: .promptEvalDuration)
         evalCount = try container.decodeIfPresent(Int.self, forKey: .evalCount)
         evalDuration = try container.decodeIfPresent(UInt64.self, forKey: .evalDuration)
+        toolCalls = try container.decodeIfPresent([ToolCall].self, forKey: .toolCalls)
+        logprobs = try container.decodeIfPresent([Logprob].self, forKey: .logprobs)
+        image = try container.decodeIfPresent(String.self, forKey: .image)
+        completed = try container.decodeIfPresent(UInt64.self, forKey: .completed)
+        total = try container.decodeIfPresent(UInt64.self, forKey: .total)
+        remoteModel = try container.decodeIfPresent(String.self, forKey: .remoteModel)
+        remoteHost = try container.decodeIfPresent(String.self, forKey: .remoteHost)
 
-        let dateString = try container.decode(String.self, forKey: .createdAt)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-
-        if let date = formatter.date(from: dateString) {
-            createdAt = date
-        } else {
-
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-            if let date = formatter.date(from: dateString) {
-                createdAt = date
-            } else {
-                throw DecodingError.dataCorrupted(
-                    DecodingError.Context(
-                        codingPath: container.codingPath + [CodingKeys.createdAt],
-                        debugDescription:
-                            "Date string '\(dateString)' does not match expected format",
-                        underlyingError: nil
-                    )
-                )
-            }
-        }
+        createdAt = try OllamaDate.decode(from: container, forKey: .createdAt)
     }
 }

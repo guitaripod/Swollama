@@ -32,8 +32,29 @@ public struct GenerationOptions {
     /// How long to keep the model loaded in memory (in seconds). Overrides the client's default.
     public let keepAlive: TimeInterval?
 
-    /// Whether to enable extended thinking mode for reasoning models.
-    public let think: Bool?
+    /// Whether — and how hard — to enable thinking for reasoning-capable models.
+    public let think: ThinkingMode?
+
+    /// Whether to return per-token log-probabilities.
+    public let logprobs: Bool?
+
+    /// Number of top alternative tokens to return per position (0–20). Requires `logprobs`.
+    public let topLogprobs: Int?
+
+    /// Whether to truncate the prompt to fit the context window. Defaults to `true` server-side.
+    public let truncate: Bool?
+
+    /// Whether to shift the context window when the prompt overflows, instead of erroring.
+    public let shift: Bool?
+
+    /// Output image width in pixels (image-generation models only).
+    public let width: Int?
+
+    /// Output image height in pixels (image-generation models only).
+    public let height: Int?
+
+    /// Number of diffusion steps (image-generation models only).
+    public let steps: Int?
 
     /// Creates generation options with the specified settings.
     ///
@@ -48,6 +69,13 @@ public struct GenerationOptions {
     ///   - raw: Bypass prompt template processing.
     ///   - keepAlive: Model keep-alive duration in seconds.
     ///   - think: Enable extended thinking mode.
+    ///   - logprobs: Return per-token log-probabilities.
+    ///   - topLogprobs: Number of top alternative tokens per position (requires `logprobs`).
+    ///   - truncate: Truncate the prompt to fit the context window.
+    ///   - shift: Shift the context window on overflow instead of erroring.
+    ///   - width: Output image width (image-generation models only).
+    ///   - height: Output image height (image-generation models only).
+    ///   - steps: Diffusion steps (image-generation models only).
     public init(
         suffix: String? = nil,
         images: [String]? = nil,
@@ -58,7 +86,14 @@ public struct GenerationOptions {
         context: [Int]? = nil,
         raw: Bool? = nil,
         keepAlive: TimeInterval? = nil,
-        think: Bool? = nil
+        think: ThinkingMode? = nil,
+        logprobs: Bool? = nil,
+        topLogprobs: Int? = nil,
+        truncate: Bool? = nil,
+        shift: Bool? = nil,
+        width: Int? = nil,
+        height: Int? = nil,
+        steps: Int? = nil
     ) {
         self.suffix = suffix
         self.images = images
@@ -70,6 +105,13 @@ public struct GenerationOptions {
         self.raw = raw
         self.keepAlive = keepAlive
         self.think = think
+        self.logprobs = logprobs
+        self.topLogprobs = topLogprobs
+        self.truncate = truncate
+        self.shift = shift
+        self.width = width
+        self.height = height
+        self.steps = steps
     }
 
     /// Default generation options with no constraints.

@@ -29,9 +29,22 @@ public struct RunningModelInfo: Codable, Sendable {
     /// Amount of VRAM (GPU memory) used by the model in bytes.
     public let sizeVRAM: UInt64
 
+    /// The runtime context length the runner was loaded with (0 if unset). Distinct from the model's
+    /// maximum context length in ``ModelDetails/contextLength``.
+    public let contextLength: Int?
+
+    /// The upstream cloud model name, for remote/cloud model stubs.
+    public let remoteModel: String?
+
+    /// The upstream cloud host, for remote/cloud model stubs.
+    public let remoteHost: String?
+
     private enum CodingKeys: String, CodingKey {
         case name, model, size, digest, details
         case expiresAt = "expires_at"
         case sizeVRAM = "size_vram"
+        case contextLength = "context_length"
+        case remoteModel = "remote_model"
+        case remoteHost = "remote_host"
     }
 }

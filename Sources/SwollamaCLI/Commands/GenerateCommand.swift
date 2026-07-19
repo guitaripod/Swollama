@@ -56,10 +56,56 @@ struct GenerateCommand: CommandProtocol {
             throw CLIError.invalidArgument("Invalid model name format")
         }
 
+        var oneShotPrompt: String?
+        var systemPrompt: String?
+        var think: ThinkingMode?
+
+        var i = 1
+        while i < arguments.count {
+            switch arguments[i] {
+            case "--prompt", "-p":
+                i += 1
+                guard i < arguments.count else {
+                    throw CLIError.missingArgument("--prompt requires text")
+                }
+                oneShotPrompt = arguments[i]
+            case "--system", "-s":
+                i += 1
+                guard i < arguments.count else {
+                    throw CLIError.missingArgument("--system requires text")
+                }
+                systemPrompt = arguments[i]
+            case "--think":
+                think = .enabled
+            case "--think-level":
+                i += 1
+                guard i < arguments.count else {
+                    throw CLIError.missingArgument("--think-level requires a level")
+                }
+                think = .level(arguments[i])
+            default:
+                break
+            }
+            i += 1
+        }
+
+        guard let client = client as? OllamaClient else {
+            throw CLIError.invalidCommand("Generation requires OllamaClient")
+        }
+
+        if let prompt = oneShotPrompt {
+            try await runOnce(
+                prompt: prompt,
+                system: systemPrompt,
+                think: think,
+                model: model,
+                client: client
+            )
+            return
+        }
+
         clearScreen()
         printHeader(model: model)
-
-        var systemPrompt: String?
 
         while true {
             printTimestamp()
@@ -94,74 +140,89 @@ struct GenerateCommand: CommandProtocol {
             print("\(TerminalStyle.neonBlue)Generated:\(TerminalStyle.reset) ", terminator: "")
             fflush(stdout)
 
-            guard let client = client as? OllamaClient else {
-                print(
-                    "\(TerminalStyle.neonPink)Error: Generation requires OllamaClient\(TerminalStyle.reset)"
-                )
-                return
-            }
-
             do {
-                let options = GenerationOptions(
-                    systemPrompt: systemPrompt
-                )
-
-                let stream = try await client.generateText(
+                _ = try await streamGeneration(
                     prompt: input,
+                    system: systemPrompt,
+                    think: think,
                     model: model,
-                    options: options
+                    client: client
                 )
-
-                var fullResponse = ""
-
-                for try await response in stream {
-                    if !response.response.isEmpty {
-                        let content = response.response
-                        print(content, terminator: "")
-                        fflush(stdout)
-                        fullResponse += content
-                    }
-                }
-
                 print(
                     "\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)"
                 )
-
+            } catch let ollamaError as OllamaError {
+                print(
+                    "\n\(TerminalStyle.neonPink)\(ollamaError.cliDescription(model: model))\(TerminalStyle.reset)"
+                )
             } catch {
                 print(
-                    "\n\(TerminalStyle.neonPink)Error during generation: \(error)\(TerminalStyle.reset)"
+                    "\n\(TerminalStyle.neonPink)Error during generation: \(error.localizedDescription)\(TerminalStyle.reset)"
                 )
-                if let ollamaError = error as? OllamaError {
-                    let errorMessage =
-                        switch ollamaError {
-                        case .modelNotFound:
-                            "Model '\(model.fullName)' not found. Please check the model name and try again."
-                        case .serverError(let message):
-                            "Server error: \(message)"
-                        case .networkError(let underlying):
-                            "Network error: \(underlying.localizedDescription)"
-                        case .invalidResponse:
-                            "Invalid response from server"
-                        case .invalidParameters(let message):
-                            "Invalid parameters: \(message)"
-                        case .decodingError(let error):
-                            "Error decoding response: \(error.localizedDescription)"
-                        case .unexpectedStatusCode(let code):
-                            "Unexpected status code: \(code)"
-                        case .httpError(let statusCode, let message):
-                            if let message = message {
-                                "HTTP error \(statusCode): \(message)"
-                            } else {
-                                "HTTP error \(statusCode)"
-                            }
-                        case .cancelled:
-                            "Cancelled"
-                        case .fileError(_):
-                            "File error"
-                        }
-                    print("\(TerminalStyle.neonPink)\(errorMessage)\(TerminalStyle.reset)")
-                }
             }
         }
+    }
+
+    /// Runs a single non-interactive generation, printing only the response to stdout (thinking, if any,
+    /// goes to stderr) so the command is safe to pipe/redirect for scripting.
+    private func runOnce(
+        prompt: String,
+        system: String?,
+        think: ThinkingMode?,
+        model: OllamaModelName,
+        client: OllamaClient
+    ) async throws {
+        do {
+            _ = try await streamGeneration(
+                prompt: prompt,
+                system: system,
+                think: think,
+                model: model,
+                client: client,
+                plain: true
+            )
+            print("")
+        } catch let ollamaError as OllamaError {
+            FileHandle.standardError.write(
+                Data((ollamaError.cliDescription(model: model) + "\n").utf8)
+            )
+            throw ollamaError
+        }
+    }
+
+    /// Streams a generation, printing thinking and response tokens as they arrive.
+    /// - Parameter plain: when `true`, response goes to stdout unstyled and thinking to stderr.
+    @discardableResult
+    private func streamGeneration(
+        prompt: String,
+        system: String?,
+        think: ThinkingMode?,
+        model: OllamaModelName,
+        client: OllamaClient,
+        plain: Bool = false
+    ) async throws -> String {
+        let options = GenerationOptions(systemPrompt: system, think: think)
+        let stream = try await client.generateText(prompt: prompt, model: model, options: options)
+
+        var fullResponse = ""
+        for try await response in stream {
+            if let thinking = response.thinking, !thinking.isEmpty {
+                if plain {
+                    FileHandle.standardError.write(Data(thinking.utf8))
+                } else {
+                    print(
+                        "\(TerminalStyle.mutedPurple)\(thinking)\(TerminalStyle.reset)",
+                        terminator: ""
+                    )
+                    fflush(stdout)
+                }
+            }
+            if !response.response.isEmpty {
+                print(response.response, terminator: "")
+                fflush(stdout)
+                fullResponse += response.response
+            }
+        }
+        return fullResponse
     }
 }

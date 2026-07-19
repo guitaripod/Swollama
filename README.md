@@ -11,9 +11,14 @@ A comprehensive, protocol-oriented Swift client for the Ollama API. This package
 
 ## Features
 
+- Full native Ollama API coverage — generate, chat, embeddings (`/api/embed` + legacy `/api/embeddings`), model management, blobs, `ps`, `version`
+- Thinking / reasoning models, including reasoning-effort levels (`low`/`medium`/`high`)
+- Structured outputs via JSON Schema (typed or arbitrary), plus JSON mode
+- Tool / function calling with tool-call `id`, `tool_name`, and `tool_call_id` correlation
+- Multimodal image inputs and model `capabilities` (vision, tools, thinking, embedding, insert, audio)
+- Rich model introspection (`model_info`, `tensors`, `capabilities`, `context_length`, `requires`)
 - Autonomous agents with web search capabilities
-- Full Ollama API coverage (chat, generation, embeddings, model management)
-- Native async/await and AsyncSequence support
+- Native async/await and AsyncSequence streaming
 - Type-safe API with comprehensive error handling
 - Thread-safe implementation using Swift actors
 - Automatic retry logic with exponential backoff
@@ -132,9 +137,7 @@ let stream = try await client.generateText(
     prompt: "Explain quantum computing",
     model: model,
     options: GenerationOptions(
-        temperature: 0.7,
-        topP: 0.9,
-        numPredict: 200
+        modelOptions: ModelOptions(numPredict: 200, topP: 0.9, temperature: 0.7)
     )
 )
 
@@ -143,18 +146,59 @@ for try await response in stream {
 }
 ```
 
+### Thinking / Reasoning
+
+```swift
+let client = OllamaClient()
+guard let model = OllamaModelName.parse("qwen3") else { fatalError() }
+
+let stream = try await client.chat(
+    messages: [ChatMessage(role: .user, content: "How many r's are in strawberry?")],
+    model: model,
+    options: ChatOptions(think: .high)   // or `true`, `.low`, `.medium`, `.max`
+)
+
+for try await response in stream {
+    if let thinking = response.message.thinking {
+        print(thinking, terminator: "")   // the model's reasoning
+    }
+    print(response.message.content, terminator: "")
+}
+```
+
+### Structured Outputs
+
+```swift
+let schema = JSONSchema(
+    type: "object",
+    properties: [
+        "name": JSONSchemaProperty(type: "string", description: "Full name"),
+        "age": JSONSchemaProperty(type: "integer")
+    ],
+    required: ["name", "age"]
+)
+
+let stream = try await client.chat(
+    messages: [ChatMessage(role: .user, content: "Invent a developer profile as JSON.")],
+    model: OllamaModelName.parse("llama3.2")!,
+    options: ChatOptions(format: .jsonSchema(schema))
+)
+// For schemas beyond the typed builder (e.g. $defs, anyOf), use `.schema(JSONValue)`.
+```
+
 ### Embeddings
 
 ```swift
 let client = OllamaClient()
-guard let model = OllamaModelName.parse("nomic-embed-text") else { fatalError() }
+guard let model = OllamaModelName.parse("embeddinggemma") else { fatalError() }
 
 let response = try await client.generateEmbeddings(
-    input: .single("Hello world"),
-    model: model
+    input: .multiple(["Hello world", "How are you?"]),
+    model: model,
+    options: EmbeddingOptions(dimensions: 256)   // Matryoshka truncation (optional)
 )
 
-print("Vector dimensions: \(response.embeddings[0].count)")
+print("Vectors: \(response.embeddings.count) x \(response.embeddings[0].count)")
 ```
 
 ### Tool Calling
@@ -166,10 +210,9 @@ let tools = [
         function: FunctionDefinition(
             name: "get_weather",
             description: "Get current weather",
-            parameters: JSONSchema(
-                type: "object",
+            parameters: Parameters(
                 properties: [
-                    "location": JSONSchemaProperty(type: "string")
+                    "location": PropertyDefinition(type: "string", description: "City name")
                 ],
                 required: ["location"]
             )
@@ -186,7 +229,7 @@ let stream = try await client.chat(
 for try await response in stream {
     if let toolCalls = response.message.toolCalls {
         for call in toolCalls {
-            print("Tool: \(call.function.name)")
+            print("Tool: \(call.function.name) [\(call.id ?? "-")]")
             print("Args: \(call.function.arguments)")
         }
     }

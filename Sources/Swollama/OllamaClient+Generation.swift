@@ -53,7 +53,14 @@ extension OllamaClient {
             stream: true,
             raw: options.raw,
             keepAlive: options.keepAlive ?? configuration.defaultKeepAlive,
-            think: options.think
+            think: options.think,
+            logprobs: options.logprobs,
+            topLogprobs: options.topLogprobs,
+            truncate: options.truncate,
+            shift: options.shift,
+            width: options.width,
+            height: options.height,
+            steps: options.steps
         )
 
         return streamRequest(
@@ -108,7 +115,11 @@ extension OllamaClient {
             options: options.modelOptions,
             stream: true,
             keepAlive: options.keepAlive ?? configuration.defaultKeepAlive,
-            think: options.think
+            think: options.think,
+            logprobs: options.logprobs,
+            topLogprobs: options.topLogprobs,
+            truncate: options.truncate,
+            shift: options.shift
         )
 
         return streamRequest(
@@ -154,6 +165,7 @@ extension OllamaClient {
             model: model.fullName,
             input: input,
             truncate: options.truncate,
+            dimensions: options.dimensions,
             options: options.modelOptions,
             keepAlive: options.keepAlive ?? configuration.defaultKeepAlive
         )
@@ -165,5 +177,39 @@ extension OllamaClient {
         )
 
         return try decode(data, as: EmbeddingResponse.self)
+    }
+
+    /// Generates a single embedding vector using the legacy `/api/embeddings` endpoint.
+    ///
+    /// This wraps Ollama's older single-input embedding endpoint. Prefer
+    /// ``generateEmbeddings(input:model:options:)`` (the `/api/embed` endpoint), which supports
+    /// batching, truncation, and configurable dimensions. This method exists for compatibility with
+    /// tooling and models that only expose the legacy endpoint.
+    ///
+    /// - Parameters:
+    ///   - prompt: The text to embed.
+    ///   - model: The embedding model to use.
+    ///   - options: Embedding options. Only `modelOptions` and `keepAlive` apply to this endpoint.
+    /// - Returns: The embedding vector for the prompt.
+    /// - Throws: ``OllamaError`` if the request fails.
+    public func generateEmbedding(
+        prompt: String,
+        model: OllamaModelName,
+        options: EmbeddingOptions = .default
+    ) async throws -> LegacyEmbeddingResponse {
+        let request = LegacyEmbeddingRequest(
+            model: model.fullName,
+            prompt: prompt,
+            options: options.modelOptions,
+            keepAlive: options.keepAlive ?? configuration.defaultKeepAlive
+        )
+
+        let data = try await makeRequest(
+            endpoint: "embeddings",
+            method: "POST",
+            body: try encode(request)
+        )
+
+        return try decode(data, as: LegacyEmbeddingResponse.self)
     }
 }

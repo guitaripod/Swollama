@@ -16,10 +16,24 @@ public struct ChatRequest: Codable, Sendable {
 
     public let keepAlive: TimeInterval?
 
-    public let think: Bool?
+    public let think: ThinkingMode?
+
+    /// Return per-token log-probabilities.
+    public let logprobs: Bool?
+
+    /// Number of top alternative tokens to return per position (0–20). Requires `logprobs`.
+    public let topLogprobs: Int?
+
+    /// Whether to trim the oldest history when the prompt exceeds the context window. Defaults to `true`.
+    public let truncate: Bool?
+
+    /// Whether to slide the context window when the prompt overflows, instead of erroring. Defaults to `true`.
+    public let shift: Bool?
 
     private enum CodingKeys: String, CodingKey {
         case model, messages, tools, format, options, stream, think
+        case logprobs, truncate, shift
+        case topLogprobs = "top_logprobs"
         case keepAlive = "keep_alive"
     }
 
@@ -31,7 +45,11 @@ public struct ChatRequest: Codable, Sendable {
         options: ModelOptions? = nil,
         stream: Bool? = nil,
         keepAlive: TimeInterval? = nil,
-        think: Bool? = nil
+        think: ThinkingMode? = nil,
+        logprobs: Bool? = nil,
+        topLogprobs: Int? = nil,
+        truncate: Bool? = nil,
+        shift: Bool? = nil
     ) {
         self.model = model
         self.messages = messages
@@ -41,6 +59,10 @@ public struct ChatRequest: Codable, Sendable {
         self.stream = stream
         self.keepAlive = keepAlive
         self.think = think
+        self.logprobs = logprobs
+        self.topLogprobs = topLogprobs
+        self.truncate = truncate
+        self.shift = shift
     }
 }
 
@@ -61,12 +83,22 @@ public struct ChatMessage: Codable, Sendable {
     /// Tool calls made by the assistant (for function calling).
     public let toolCalls: [ToolCall]?
 
+    /// The name of the tool that produced this message. Set on messages with the ``MessageRole/tool`` role
+    /// so the model can associate a tool result with the tool call that requested it.
+    public let toolName: String?
+
+    /// The identifier of the tool call this message answers, correlating a ``MessageRole/tool`` result
+    /// with the ``ToolCall/id`` that requested it.
+    public let toolCallId: String?
+
     /// Extended thinking/reasoning content (for reasoning models with `think` enabled).
     public let thinking: String?
 
     private enum CodingKeys: String, CodingKey {
         case role, content, images, thinking
         case toolCalls = "tool_calls"
+        case toolName = "tool_name"
+        case toolCallId = "tool_call_id"
     }
 
     public init(
@@ -74,12 +106,16 @@ public struct ChatMessage: Codable, Sendable {
         content: String,
         images: [String]? = nil,
         toolCalls: [ToolCall]? = nil,
+        toolName: String? = nil,
+        toolCallId: String? = nil,
         thinking: String? = nil
     ) {
         self.role = role
         self.content = content
         self.images = images
         self.toolCalls = toolCalls
+        self.toolName = toolName
+        self.toolCallId = toolCallId
         self.thinking = thinking
     }
 }

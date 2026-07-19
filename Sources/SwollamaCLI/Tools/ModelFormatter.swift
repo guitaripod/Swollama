@@ -16,15 +16,18 @@ struct DefaultModelFormatter: ModelFormatter {
     }()
 
     func format(_ model: ModelListEntry) -> String {
-        """
-        - \(model.name)
-          Size: \(FileSize.format(bytes: Int(model.size)))
-          Family: \(model.details.family)
-          Parameters: \(model.details.parameterSize)
-          Quantization: \(model.details.quantizationLevel)
-          Modified: \(dateFormatter.string(from: model.modifiedAt))
-
-        """
+        var lines = """
+            - \(model.name)
+              Size: \(FileSize.format(bytes: Int(model.size)))
+              Family: \(model.details.family)
+              Parameters: \(model.details.parameterSize)
+              Quantization: \(model.details.quantizationLevel)
+              Modified: \(dateFormatter.string(from: model.modifiedAt))
+            """
+        if let capabilities = model.capabilities, !capabilities.isEmpty {
+            lines += "\n  Capabilities: \(capabilities.map(\.rawValue).joined(separator: ", "))"
+        }
+        return lines + "\n"
     }
 }
 

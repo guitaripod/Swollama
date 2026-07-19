@@ -26,11 +26,34 @@ public struct GenerateRequest: Codable, Sendable {
 
     public let keepAlive: TimeInterval?
 
-    public let think: Bool?
+    public let think: ThinkingMode?
+
+    /// Return per-token log-probabilities.
+    public let logprobs: Bool?
+
+    /// Number of top alternative tokens to return per position (0–20). Requires `logprobs`.
+    public let topLogprobs: Int?
+
+    /// Whether to truncate the prompt to fit the context window. Defaults to `true` server-side.
+    public let truncate: Bool?
+
+    /// Whether to shift the context window when the prompt overflows, instead of erroring.
+    public let shift: Bool?
+
+    /// Output image width in pixels (image-generation models only).
+    public let width: Int?
+
+    /// Output image height in pixels (image-generation models only).
+    public let height: Int?
+
+    /// Number of diffusion steps (image-generation models only).
+    public let steps: Int?
 
     private enum CodingKeys: String, CodingKey {
         case model, prompt, suffix, images, format, options, system
-        case template, context, stream, raw, think
+        case template, context, stream, raw, think, logprobs
+        case truncate, shift, width, height, steps
+        case topLogprobs = "top_logprobs"
         case keepAlive = "keep_alive"
     }
 
@@ -47,7 +70,14 @@ public struct GenerateRequest: Codable, Sendable {
         stream: Bool? = nil,
         raw: Bool? = nil,
         keepAlive: TimeInterval? = nil,
-        think: Bool? = nil
+        think: ThinkingMode? = nil,
+        logprobs: Bool? = nil,
+        topLogprobs: Int? = nil,
+        truncate: Bool? = nil,
+        shift: Bool? = nil,
+        width: Int? = nil,
+        height: Int? = nil,
+        steps: Int? = nil
     ) {
         self.model = model
         self.prompt = prompt
@@ -62,6 +92,13 @@ public struct GenerateRequest: Codable, Sendable {
         self.raw = raw
         self.keepAlive = keepAlive
         self.think = think
+        self.logprobs = logprobs
+        self.topLogprobs = topLogprobs
+        self.truncate = truncate
+        self.shift = shift
+        self.width = width
+        self.height = height
+        self.steps = steps
     }
 }
 
@@ -72,8 +109,14 @@ public enum ResponseFormat: Codable, Sendable {
     /// Generate unstructured JSON output.
     case json
 
-    /// Generate structured output conforming to a JSON schema.
+    /// Generate structured output conforming to a typed ``JSONSchema``.
     case jsonSchema(JSONSchema)
+
+    /// Generate structured output conforming to an arbitrary JSON Schema.
+    ///
+    /// Use this when the schema needs features the typed ``JSONSchema`` cannot express — for
+    /// example `$defs`, `anyOf`/`oneOf`, `format`, numeric bounds, or deeply nested definitions.
+    case schema(JSONValue)
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -85,6 +128,11 @@ public enum ResponseFormat: Codable, Sendable {
 
         if let schema = try? container.decode(JSONSchema.self) {
             self = .jsonSchema(schema)
+            return
+        }
+
+        if let value = try? container.decode(JSONValue.self) {
+            self = .schema(value)
             return
         }
 
@@ -101,6 +149,8 @@ public enum ResponseFormat: Codable, Sendable {
             try container.encode("json")
         case .jsonSchema(let schema):
             try container.encode(schema)
+        case .schema(let value):
+            try container.encode(value)
         }
     }
 }
@@ -282,6 +332,7 @@ public struct ModelOptions: Codable, Sendable {
     public let useMMap: Bool?
     public let useMLock: Bool?
     public let numThread: Int?
+    public let draftNumPredict: Int?
 
     private enum CodingKeys: String, CodingKey {
         case numKeep = "num_keep"
@@ -313,6 +364,7 @@ public struct ModelOptions: Codable, Sendable {
         case useMMap = "use_mmap"
         case useMLock = "use_mlock"
         case numThread = "num_thread"
+        case draftNumPredict = "draft_num_predict"
     }
 
     public init(
@@ -344,7 +396,8 @@ public struct ModelOptions: Codable, Sendable {
         vocabOnly: Bool? = nil,
         useMMap: Bool? = nil,
         useMLock: Bool? = nil,
-        numThread: Int? = nil
+        numThread: Int? = nil,
+        draftNumPredict: Int? = nil
     ) {
         self.numKeep = numKeep
         self.seed = seed
@@ -375,5 +428,6 @@ public struct ModelOptions: Codable, Sendable {
         self.useMMap = useMMap
         self.useMLock = useMLock
         self.numThread = numThread
+        self.draftNumPredict = draftNumPredict
     }
 }

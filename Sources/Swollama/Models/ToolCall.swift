@@ -4,10 +4,17 @@ import Foundation
 ///
 /// Represents a function call that the model wants to invoke.
 public struct ToolCall: Codable, Sendable {
+    /// A server-assigned identifier for this tool call, when provided.
+    ///
+    /// Newer Ollama servers assign an `id` (e.g. `"call_abc123"`) to each tool call. Echo it back on
+    /// the corresponding ``MessageRole/tool`` result message when the model expects it.
+    public let id: String?
+
     /// The function call details.
     public let function: FunctionCall
 
-    public init(function: FunctionCall) {
+    public init(id: String? = nil, function: FunctionCall) {
+        self.id = id
         self.function = function
     }
 }
@@ -19,21 +26,26 @@ public struct FunctionCall: Codable, Sendable {
     /// The name of the function to call.
     public let name: String
 
+    /// The position of this call within a batch of tool calls, when provided by the server.
+    public let index: Int?
+
     /// The function arguments as a JSON string.
     public let arguments: String
 
-    public init(name: String, arguments: String) {
+    public init(name: String, arguments: String, index: Int? = nil) {
         self.name = name
         self.arguments = arguments
+        self.index = index
     }
 
     private enum CodingKeys: String, CodingKey {
-        case name, arguments
+        case name, index, arguments
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
+        index = try container.decodeIfPresent(Int.self, forKey: .index)
 
         if let argumentsString = try? container.decode(String.self, forKey: .arguments) {
             arguments = argumentsString
@@ -49,6 +61,7 @@ public struct FunctionCall: Codable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(index, forKey: .index)
 
         if let data = arguments.data(using: .utf8),
             let jsonObject = try? JSONSerialization.jsonObject(with: data),

@@ -117,15 +117,16 @@ extension OllamaClient {
                 method: "HEAD"
             )
             return true
-        } catch {
-
-            if let ollamaError = error as? OllamaError,
-                case .serverError(let message) = ollamaError,
-                message.contains("404") || message.contains("Not Found")
-            {
+        } catch let error as OllamaError {
+            switch error {
+            case .modelNotFound:
                 return false
+            case .serverError(let message)
+            where message.contains("404") || message.contains("Not Found"):
+                return false
+            default:
+                throw error
             }
-            throw error
         }
     }
 

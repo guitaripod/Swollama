@@ -128,9 +128,26 @@ struct ChatCommand: CommandProtocol {
                 )
 
                 var fullResponse = ""
+                var thinkingShown = false
 
                 for try await response in stream {
+                    if let thinking = response.message.thinking, !thinking.isEmpty {
+                        if !thinkingShown {
+                            print("\(TerminalStyle.mutedPurple)", terminator: "")
+                            thinkingShown = true
+                        }
+                        print(thinking, terminator: "")
+                        fflush(stdout)
+                    }
+
                     if !response.message.content.isEmpty {
+                        if thinkingShown {
+                            print(
+                                "\(TerminalStyle.reset)\(TerminalStyle.neonBlue)\nAssistant:\(TerminalStyle.reset) ",
+                                terminator: ""
+                            )
+                            thinkingShown = false
+                        }
                         let content = response.message.content
                         print(content, terminator: "")
                         fflush(stdout)
@@ -146,40 +163,14 @@ struct ChatCommand: CommandProtocol {
                     "\n\(TerminalStyle.neonBlue)────────────────────────────────────────────\(TerminalStyle.reset)"
                 )
 
+            } catch let ollamaError as OllamaError {
+                print(
+                    "\n\(TerminalStyle.neonPink)\(ollamaError.cliDescription(model: model))\(TerminalStyle.reset)"
+                )
             } catch {
                 print(
-                    "\n\(TerminalStyle.neonPink)Error during chat: \(error)\(TerminalStyle.reset)"
+                    "\n\(TerminalStyle.neonPink)Error during chat: \(error.localizedDescription)\(TerminalStyle.reset)"
                 )
-                if let ollamaError = error as? OllamaError {
-                    let errorMessage =
-                        switch ollamaError {
-                        case .modelNotFound:
-                            "Model '\(model.fullName)' not found. Please check the model name and try again."
-                        case .serverError(let message):
-                            "Server error: \(message)"
-                        case .networkError(let underlying):
-                            "Network error: \(underlying.localizedDescription)"
-                        case .invalidResponse:
-                            "Invalid response from server"
-                        case .invalidParameters(let message):
-                            "Invalid parameters: \(message)"
-                        case .decodingError(let error):
-                            "Error decoding response: \(error.localizedDescription)"
-                        case .unexpectedStatusCode(let code):
-                            "Unexpected status code: \(code)"
-                        case .httpError(let statusCode, let message):
-                            if let message = message {
-                                "HTTP error \(statusCode): \(message)"
-                            } else {
-                                "HTTP error \(statusCode)"
-                            }
-                        case .cancelled:
-                            "Cancelled"
-                        case .fileError(_):
-                            "File error"
-                        }
-                    print("\(TerminalStyle.neonPink)\(errorMessage)\(TerminalStyle.reset)")
-                }
             }
         }
     }

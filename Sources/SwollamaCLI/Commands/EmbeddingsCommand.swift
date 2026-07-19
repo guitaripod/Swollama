@@ -15,6 +15,7 @@ struct EmbeddingsCommand: CommandProtocol {
 
         var modelName = "all-minilm"
         var truncate = true
+        var dimensions: Int?
         var outputFormat = OutputFormat.json
         var inputTexts: [String] = []
 
@@ -27,6 +28,13 @@ struct EmbeddingsCommand: CommandProtocol {
                     throw CLIError.missingArgument("--model requires a model name")
                 }
                 modelName = arguments[i]
+
+            case "--dimensions", "-d":
+                i += 1
+                guard i < arguments.count, let value = Int(arguments[i]) else {
+                    throw CLIError.invalidArgument("--dimensions requires an integer")
+                }
+                dimensions = value
 
             case "--no-truncate":
                 truncate = false
@@ -62,7 +70,7 @@ struct EmbeddingsCommand: CommandProtocol {
             throw CLIError.invalidArgument("Invalid model name format")
         }
 
-        let options = EmbeddingOptions(truncate: truncate)
+        let options = EmbeddingOptions(truncate: truncate, dimensions: dimensions)
 
         print("Generating embeddings using model '\(modelName)'...")
         print("Input texts: \(inputTexts.count)")
@@ -96,10 +104,11 @@ struct EmbeddingsCommand: CommandProtocol {
             Generate embeddings for one or more texts.
 
             Options:
-                --model, -m <model>     Model to use (default: all-minilm)
-                --no-truncate           Don't truncate inputs
-                --format, -f <format>   Output format: json, csv, raw (default: json)
-                --help, -h              Show this help message
+                --model, -m <model>       Model to use (default: all-minilm)
+                --dimensions, -d <n>      Truncate embeddings to n dimensions (Matryoshka models)
+                --no-truncate             Don't truncate inputs
+                --format, -f <format>     Output format: json, csv, raw (default: json)
+                --help, -h                Show this help message
 
             Examples:
                 # Generate embeddings for a single text

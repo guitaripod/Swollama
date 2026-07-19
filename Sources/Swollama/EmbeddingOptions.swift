@@ -8,6 +8,10 @@ public struct EmbeddingOptions {
     /// Whether to truncate input text that exceeds the model's maximum context length. Defaults to `true`.
     public let truncate: Bool?
 
+    /// The number of dimensions to truncate embeddings to, for models that support Matryoshka
+    /// representations. `nil` returns the model's full-width embeddings.
+    public let dimensions: Int?
+
     /// Model-specific parameters (most embedding models have limited parameter support).
     public let modelOptions: ModelOptions?
 
@@ -18,14 +22,17 @@ public struct EmbeddingOptions {
     ///
     /// - Parameters:
     ///   - truncate: Whether to truncate long inputs. Defaults to `true`.
+    ///   - dimensions: Truncate embeddings to this many dimensions (Matryoshka models only).
     ///   - modelOptions: Model-specific parameters.
     ///   - keepAlive: Model keep-alive duration in seconds.
     public init(
         truncate: Bool? = true,
+        dimensions: Int? = nil,
         modelOptions: ModelOptions? = nil,
         keepAlive: TimeInterval? = nil
     ) {
         self.truncate = truncate
+        self.dimensions = dimensions
         self.modelOptions = modelOptions
         self.keepAlive = keepAlive
     }

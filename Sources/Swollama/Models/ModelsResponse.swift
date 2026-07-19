@@ -26,9 +26,20 @@ public struct ModelListEntry: Codable, Sendable {
     /// Detailed model information including format, family, and parameters.
     public let details: ModelDetails
 
+    /// The capabilities the model supports (e.g. `completion`, `tools`, `vision`), when reported.
+    public let capabilities: [ModelCapability]?
+
+    /// The upstream cloud model name, for remote/cloud model stubs.
+    public let remoteModel: String?
+
+    /// The upstream cloud host, for remote/cloud model stubs.
+    public let remoteHost: String?
+
     private enum CodingKeys: String, CodingKey {
-        case name, model, size, digest, details
+        case name, model, size, digest, details, capabilities
         case modifiedAt = "modified_at"
+        case remoteModel = "remote_model"
+        case remoteHost = "remote_host"
     }
 
     public init(from decoder: Decoder) throws {
@@ -38,31 +49,10 @@ public struct ModelListEntry: Codable, Sendable {
         size = try container.decode(UInt64.self, forKey: .size)
         digest = try container.decode(String.self, forKey: .digest)
         details = try container.decode(ModelDetails.self, forKey: .details)
-
-        let dateString = try container.decode(String.self, forKey: .modifiedAt)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-
-        if let date = formatter.date(from: dateString) {
-            modifiedAt = date
-        } else {
-
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-            if let date = formatter.date(from: dateString) {
-                modifiedAt = date
-            } else {
-                throw DecodingError.dataCorrupted(
-                    DecodingError.Context(
-                        codingPath: container.codingPath + [CodingKeys.modifiedAt],
-                        debugDescription:
-                            "Date string '\(dateString)' does not match expected format",
-                        underlyingError: nil
-                    )
-                )
-            }
-        }
+        capabilities = try container.decodeIfPresent([ModelCapability].self, forKey: .capabilities)
+        remoteModel = try container.decodeIfPresent(String.self, forKey: .remoteModel)
+        remoteHost = try container.decodeIfPresent(String.self, forKey: .remoteHost)
+        modifiedAt = try OllamaDate.decode(from: container, forKey: .modifiedAt)
     }
 }
 
@@ -88,10 +78,51 @@ public struct ModelDetails: Codable, Sendable {
     /// The quantization level (e.g., "Q4_K_M", "Q8_0").
     public let quantizationLevel: String
 
+    /// The model's maximum context length, when reported.
+    public let contextLength: Int?
+
+    /// The model's embedding dimension, when reported.
+    public let embeddingLength: Int?
+
     private enum CodingKeys: String, CodingKey {
         case parentModel = "parent_model"
         case format, family, families
         case parameterSize = "parameter_size"
         case quantizationLevel = "quantization_level"
+        case contextLength = "context_length"
+        case embeddingLength = "embedding_length"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        parentModel = try container.decodeIfPresent(String.self, forKey: .parentModel) ?? ""
+        format = try container.decodeIfPresent(String.self, forKey: .format) ?? ""
+        family = try container.decodeIfPresent(String.self, forKey: .family) ?? ""
+        families = try container.decodeIfPresent([String].self, forKey: .families)
+        parameterSize = try container.decodeIfPresent(String.self, forKey: .parameterSize) ?? ""
+        quantizationLevel =
+            try container.decodeIfPresent(String.self, forKey: .quantizationLevel) ?? ""
+        contextLength = try container.decodeIfPresent(Int.self, forKey: .contextLength)
+        embeddingLength = try container.decodeIfPresent(Int.self, forKey: .embeddingLength)
+    }
+
+    public init(
+        parentModel: String = "",
+        format: String = "",
+        family: String = "",
+        families: [String]? = nil,
+        parameterSize: String = "",
+        quantizationLevel: String = "",
+        contextLength: Int? = nil,
+        embeddingLength: Int? = nil
+    ) {
+        self.parentModel = parentModel
+        self.format = format
+        self.family = family
+        self.families = families
+        self.parameterSize = parameterSize
+        self.quantizationLevel = quantizationLevel
+        self.contextLength = contextLength
+        self.embeddingLength = embeddingLength
     }
 }

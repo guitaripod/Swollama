@@ -128,7 +128,7 @@ public actor OllamaAgent {
                                     OllamaWebSearchClient.webFetchTool,
                                 ],
                                 modelOptions: self.configuration.modelOptions,
-                                think: self.configuration.enableThinking
+                                think: ThinkingMode(self.configuration.enableThinking)
                             )
                         )
 

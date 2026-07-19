@@ -175,14 +175,14 @@ struct TestCommand: CommandProtocol {
         do {
             let response = try await chatSingle(request)
 
-            if let thinking = response.message.thinking {
+            if let thinking = response.thinking {
                 print("💭 Model's Thinking Process:")
                 print(thinking)
                 print("\n" + String(repeating: "-", count: 40) + "\n")
             }
 
             print("💬 Model's Response:")
-            print(response.message.content)
+            print(response.content)
         } catch {
             print("❌ Error: \(error)")
         }
@@ -214,7 +214,7 @@ struct TestCommand: CommandProtocol {
 
         do {
             let response = try await chatSingle(request)
-            print("\nResponse: \(response.message.content)")
+            print("\nResponse: \(response.content)")
         } catch {
             print("❌ Error: \(error)")
             print("(This is expected if the model doesn't support images)")
@@ -264,14 +264,17 @@ struct TestCommand: CommandProtocol {
         do {
             let response = try await chatSingle(request)
 
-            if let toolCalls = response.message.toolCalls, !toolCalls.isEmpty {
+            if let toolCalls = response.toolCalls, !toolCalls.isEmpty {
                 print("🔧 Tool Calls:")
                 for call in toolCalls {
+                    if let id = call.id {
+                        print("  - ID: \(id)")
+                    }
                     print("  - Function: \(call.function.name)")
                     print("    Arguments: \(call.function.arguments)")
                 }
             } else {
-                print("Response: \(response.message.content)")
+                print("Response: \(response.content)")
                 print("(No tool calls were made)")
             }
         } catch {
@@ -306,7 +309,18 @@ struct TestCommand: CommandProtocol {
         }
     }
 
-    private func generateSingle(_ request: GenerateRequest) async throws -> GenerateResponse {
+    private struct GenerateResult {
+        let response: String
+        let thinking: String?
+    }
+
+    private struct ChatResult {
+        let content: String
+        let thinking: String?
+        let toolCalls: [ToolCall]?
+    }
+
+    private func generateSingle(_ request: GenerateRequest) async throws -> GenerateResult {
         let options = GenerationOptions(
             suffix: request.suffix,
             images: request.images,
@@ -334,19 +348,22 @@ struct TestCommand: CommandProtocol {
             options: options
         )
 
-        var finalResponse: GenerateResponse?
-        for try await response in stream {
-            finalResponse = response
+        var response = ""
+        var thinking = ""
+        for try await chunk in stream {
+            response += chunk.response
+            if let chunkThinking = chunk.thinking {
+                thinking += chunkThinking
+            }
         }
 
-        guard let response = finalResponse else {
-            throw CLIError.invalidCommand("No response received")
-        }
-
-        return response
+        return GenerateResult(
+            response: response,
+            thinking: thinking.isEmpty ? nil : thinking
+        )
     }
 
-    private func chatSingle(_ request: ChatRequest) async throws -> ChatResponse {
+    private func chatSingle(_ request: ChatRequest) async throws -> ChatResult {
         let options = ChatOptions(
             tools: request.tools,
             format: request.format,
@@ -369,16 +386,24 @@ struct TestCommand: CommandProtocol {
             options: options
         )
 
-        var finalResponse: ChatResponse?
-        for try await response in stream {
-            finalResponse = response
+        var content = ""
+        var thinking = ""
+        var toolCalls: [ToolCall] = []
+        for try await chunk in stream {
+            content += chunk.message.content
+            if let chunkThinking = chunk.message.thinking {
+                thinking += chunkThinking
+            }
+            if let chunkToolCalls = chunk.message.toolCalls {
+                toolCalls.append(contentsOf: chunkToolCalls)
+            }
         }
 
-        guard let response = finalResponse else {
-            throw CLIError.invalidCommand("No response received")
-        }
-
-        return response
+        return ChatResult(
+            content: content,
+            thinking: thinking.isEmpty ? nil : thinking,
+            toolCalls: toolCalls.isEmpty ? nil : toolCalls
+        )
     }
 
     private func printTestHelp() {

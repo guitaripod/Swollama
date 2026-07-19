@@ -5,12 +5,14 @@ public struct EmbeddingRequest: Codable, Sendable {
         model: String,
         input: EmbeddingInput,
         truncate: Bool? = nil,
+        dimensions: Int? = nil,
         options: ModelOptions? = nil,
         keepAlive: TimeInterval? = nil
     ) {
         self.model = model
         self.input = input
         self.truncate = truncate
+        self.dimensions = dimensions
         self.options = options
         self.keepAlive = keepAlive
     }
@@ -21,12 +23,16 @@ public struct EmbeddingRequest: Codable, Sendable {
 
     public let truncate: Bool?
 
+    /// The number of dimensions to truncate embeddings to, for models that support Matryoshka
+    /// representations (e.g. `embeddinggemma`).
+    public let dimensions: Int?
+
     public let options: ModelOptions?
 
     public let keepAlive: TimeInterval?
 
     private enum CodingKeys: String, CodingKey {
-        case model, input, truncate, options
+        case model, input, truncate, dimensions, options
         case keepAlive = "keep_alive"
     }
 }
