@@ -24,7 +24,16 @@ struct ListRunningModelsCommand: CommandProtocol {
             print("  Full ID: \(model.model)")
             print("  Size: \(formatBytes(model.size))")
             print("  VRAM Usage: \(formatBytes(model.sizeVRAM))")
+            if let contextLength = model.contextLength, contextLength > 0 {
+                print("  Loaded Context: \(contextLength)")
+            }
             print("  Expires: \(formatDate(model.expiresAt))")
+            if let remoteModel = model.remoteModel {
+                print("  Remote Model: \(remoteModel)")
+            }
+            if let remoteHost = model.remoteHost {
+                print("  Remote Host: \(remoteHost)")
+            }
             print("  Details:")
             print("    Family: \(model.details.family)")
             print("    Parameter Size: \(model.details.parameterSize)")

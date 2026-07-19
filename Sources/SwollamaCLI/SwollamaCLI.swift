@@ -125,17 +125,17 @@ struct SwollamaCLI {
               --help, -h              Show this help message
 
             Commands:
-              list                     List available models
-              show <model>            Show model information
+              list                     List available models (with capabilities)
+              show <model> [-v]        Show model info (--verbose for model_info + tensors)
               pull <model>            Download a model
               push <model>            Upload a model to Ollama library
               create <model>          Create a new model
               copy <src> <dst>        Create a copy of a model
               delete <model>          Remove a model
-              chat [model]            Start a chat session
+              chat <model>            Start a chat session (--think, --format json)
               agent <query>           Run an agentic workflow with web search
-              generate [model]        Generate text from a prompt
-              embeddings <text>       Generate embeddings for text
+              generate <model>        Generate text (--prompt for one-shot, --think)
+              embeddings <text>       Generate embeddings (--dimensions, --legacy)
               ps                      List running models
               version                 Show Ollama server version
               blob <subcommand>       Manage blobs (check/push)
@@ -145,12 +145,13 @@ struct SwollamaCLI {
             Examples:
               swollama list
               swollama --host http://remote:11434 list
-              swollama chat llama3.2
+              swollama show qwen3 --verbose
+              swollama chat qwen3 --think
               swollama agent "what is ollama's new engine"
-              swollama generate codellama
+              swollama generate codellama --prompt "def fib(n):" --think
               swollama pull llama3.2
               swollama create mario --from llama3.2 --system "You are Mario"
-              swollama embeddings "Hello world"
+              swollama embeddings "Hello world" --dimensions 256
               swollama test structured
               swollama version
 
@@ -161,10 +162,12 @@ struct SwollamaCLI {
         )
     }
 
+    static let version = "4.1.0"
+
     static func printVersion() {
         print(
             """
-            Swollama v1.0.0
+            Swollama \(version)
             Platform: \(getPlatformName())
             Swift: 5.9+
             """

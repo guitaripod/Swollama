@@ -34,6 +34,9 @@ struct ChatConfiguration {
     var maxContextTokens: Int = 4096
     var streamingIndicator: String = "▌"
     var typingDelay: TimeInterval = 0.0
+    var think: ThinkingMode? = nil
+    var format: ResponseFormat? = nil
+    var keepAlive: TimeInterval? = nil
 }
 
 enum CommandResult {
@@ -384,11 +387,32 @@ class EnhancedChatCommand: CommandProtocol {
             let stream = try await client.chat(
                 messages: messages,
                 model: model,
-                options: .default
+                options: ChatOptions(
+                    format: configuration.format,
+                    keepAlive: configuration.keepAlive,
+                    think: configuration.think
+                )
             )
 
+            var thinkingShown = false
             for try await response in stream {
+                if let thinking = response.message.thinking, !thinking.isEmpty {
+                    if !thinkingShown {
+                        print("\(EnhancedTerminalStyle.mutedPurple)", terminator: "")
+                        thinkingShown = true
+                    }
+                    print(thinking, terminator: "")
+                    fflush(stdout)
+                }
+
                 if !response.message.content.isEmpty {
+                    if thinkingShown {
+                        print(
+                            "\(EnhancedTerminalStyle.reset)\n\(EnhancedTerminalStyle.neonBlue)Assistant:\(EnhancedTerminalStyle.reset) ",
+                            terminator: ""
+                        )
+                        thinkingShown = false
+                    }
                     let content = response.message.content
                     print(content, terminator: "")
                     fflush(stdout)
@@ -465,7 +489,8 @@ class EnhancedChatCommand: CommandProtocol {
             throw CLIError.invalidArgument("Invalid model name format: '\(arguments[0])'")
         }
 
-        for i in 1..<arguments.count {
+        var i = 1
+        while i < arguments.count {
             switch arguments[i] {
             case "--no-timestamps":
                 configuration.showTimestamps = false
@@ -473,6 +498,25 @@ class EnhancedChatCommand: CommandProtocol {
                 configuration.showTokenCount = false
             case "--markdown":
                 configuration.enableMarkdown = true
+            case "--think":
+                configuration.think = .enabled
+            case "--think-level":
+                if i + 1 < arguments.count {
+                    i += 1
+                    configuration.think = .level(arguments[i])
+                }
+            case "--format":
+                if i + 1 < arguments.count {
+                    i += 1
+                    if arguments[i].lowercased() == "json" {
+                        configuration.format = .json
+                    }
+                }
+            case "--keep-alive":
+                if i + 1 < arguments.count, let seconds = TimeInterval(arguments[i + 1]) {
+                    i += 1
+                    configuration.keepAlive = seconds
+                }
             case "--auto-save":
                 configuration.autoSave = true
                 if i + 1 < arguments.count && !arguments[i + 1].starts(with: "--") {
@@ -481,6 +525,7 @@ class EnhancedChatCommand: CommandProtocol {
             default:
                 break
             }
+            i += 1
         }
 
         clearScreen()

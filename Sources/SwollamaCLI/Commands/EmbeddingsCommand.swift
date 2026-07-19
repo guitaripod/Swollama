@@ -16,6 +16,7 @@ struct EmbeddingsCommand: CommandProtocol {
         var modelName = "all-minilm"
         var truncate = true
         var dimensions: Int?
+        var legacy = false
         var outputFormat = OutputFormat.json
         var inputTexts: [String] = []
 
@@ -35,6 +36,9 @@ struct EmbeddingsCommand: CommandProtocol {
                     throw CLIError.invalidArgument("--dimensions requires an integer")
                 }
                 dimensions = value
+
+            case "--legacy":
+                legacy = true
 
             case "--no-truncate":
                 truncate = false
@@ -72,16 +76,36 @@ struct EmbeddingsCommand: CommandProtocol {
 
         let options = EmbeddingOptions(truncate: truncate, dimensions: dimensions)
 
+        guard let ollamaClient = client as? OllamaClient else {
+            throw CLIError.invalidArgument("Client does not support embeddings generation")
+        }
+
+        if legacy {
+            print("Generating embedding via legacy /api/embeddings for '\(modelName)'...")
+            print("")
+            do {
+                let response = try await ollamaClient.generateEmbedding(
+                    prompt: inputTexts[0],
+                    model: model,
+                    options: options
+                )
+                print("Dimensions: \(response.embedding.count)")
+                let preview = response.embedding.prefix(10)
+                    .map { String(format: "%.6f", $0) }
+                    .joined(separator: ", ")
+                print("First 10 values: \(preview)")
+            } catch {
+                print("❌ Failed to generate embedding: \(error)")
+                throw error
+            }
+            return
+        }
+
         print("Generating embeddings using model '\(modelName)'...")
         print("Input texts: \(inputTexts.count)")
         print("")
 
         do {
-
-            guard let ollamaClient = client as? OllamaClient else {
-                throw CLIError.invalidArgument("Client does not support embeddings generation")
-            }
-
             let response = try await ollamaClient.generateEmbeddings(
                 input: inputTexts.count == 1 ? .single(inputTexts[0]) : .multiple(inputTexts),
                 model: model,
@@ -106,6 +130,7 @@ struct EmbeddingsCommand: CommandProtocol {
             Options:
                 --model, -m <model>       Model to use (default: all-minilm)
                 --dimensions, -d <n>      Truncate embeddings to n dimensions (Matryoshka models)
+                --legacy                  Use the legacy /api/embeddings endpoint (single input)
                 --no-truncate             Don't truncate inputs
                 --format, -f <format>     Output format: json, csv, raw (default: json)
                 --help, -h                Show this help message

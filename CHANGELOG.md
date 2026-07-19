@@ -3,6 +3,29 @@
 All notable changes to Swollama are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## 4.1.0
+
+CLI now exercises the full 4.0.0 library surface (dogfooding) and gains useful flags.
+The library API is unchanged from 4.0.0.
+
+### Added
+
+- `swollama chat <model> --think[-level <lvl>]` streams the model's reasoning;
+  `--format json` for structured output; `--keep-alive <seconds>`.
+- `swollama show <model> --verbose` prints the full `model_info` and tensor listing;
+  the summary view now shows license, system, renderer, parser, requires, remote
+  model/host, and context/embedding lengths.
+- `swollama ps` shows the loaded runtime context length and remote model/host.
+- `swollama embeddings --legacy` exercises the legacy `/api/embeddings` endpoint.
+
+### Fixed
+
+- `swollama --version` reported a stale `v1.0.0`.
+- Removed a dead, unused `ChatCommand` (its shared `TerminalStyle` moved to its own file).
+- DocC now builds on a free Linux runner (`swift-docc-plugin`) instead of a macOS
+  runner; the plugin is gated behind `SWOLLAMA_DOCS` so consumers keep zero
+  dependencies. Cleaned up all DocC symbol-link warnings.
+
 ## 4.0.0
 
 Comprehensive update bringing Swollama in line with the current Ollama REST API
