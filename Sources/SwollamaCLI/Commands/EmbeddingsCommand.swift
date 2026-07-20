@@ -81,8 +81,7 @@ struct EmbeddingsCommand: CommandProtocol {
         }
 
         if legacy {
-            print("Generating embedding via legacy /api/embeddings for '\(modelName)'...")
-            print("")
+            printToStderr("Generating embedding via legacy /api/embeddings for '\(modelName)'...")
             do {
                 let response = try await ollamaClient.generateEmbedding(
                     prompt: inputTexts[0],
@@ -95,15 +94,13 @@ struct EmbeddingsCommand: CommandProtocol {
                     .joined(separator: ", ")
                 print("First 10 values: \(preview)")
             } catch {
-                print("❌ Failed to generate embedding: \(error)")
                 throw error
             }
             return
         }
 
-        print("Generating embeddings using model '\(modelName)'...")
-        print("Input texts: \(inputTexts.count)")
-        print("")
+        printToStderr("Generating embeddings using model '\(modelName)'...")
+        printToStderr("Input texts: \(inputTexts.count)")
 
         do {
             let response = try await ollamaClient.generateEmbeddings(
@@ -115,7 +112,6 @@ struct EmbeddingsCommand: CommandProtocol {
             outputFormat.display(response)
 
         } catch {
-            print("❌ Failed to generate embeddings: \(error)")
             throw error
         }
     }

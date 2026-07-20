@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Controls embedding behavior including input truncation, model parameters, and
 /// model keep-alive duration.
-public struct EmbeddingOptions {
+public struct EmbeddingOptions: Sendable {
     /// Whether to truncate input text that exceeds the model's maximum context length. Defaults to `true`.
     public let truncate: Bool?
 

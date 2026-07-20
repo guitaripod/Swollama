@@ -18,7 +18,7 @@ struct ShowModelCommand: CommandProtocol {
 
         let verbose = arguments.contains("--verbose") || arguments.contains("-v")
 
-        print("Fetching details for model: \(model.fullName)...")
+        printToStderr("Fetching details for model: \(model.fullName)...")
         let info = try await client.showModel(name: model, verbose: verbose ? true : nil)
 
         print("\nModel Details:")

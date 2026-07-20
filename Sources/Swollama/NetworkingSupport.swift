@@ -8,7 +8,19 @@ enum NetworkingSupport {
 
     static let streamBufferSize = 65536
 
-    static func createSession(configuration: URLSessionConfiguration) -> URLSession {
+    static func createSession(
+        configuration: URLSessionConfiguration,
+        allowsInsecureConnections: Bool = false
+    ) -> URLSession {
+        #if !os(Linux)
+            if allowsInsecureConnections {
+                return URLSession(
+                    configuration: configuration,
+                    delegate: InsecureTrustDelegate(),
+                    delegateQueue: nil
+                )
+            }
+        #endif
         return URLSession(configuration: configuration)
     }
 
@@ -84,14 +96,15 @@ enum NetworkingSupport {
 
             let (bytes, response) = try await session.bytes(for: request)
             let stream = AsyncThrowingStream<Data, Error> { continuation in
-                Task {
+                let task = Task {
                     do {
                         var buffer = Data(capacity: streamBufferSize)
+                        let newline = UInt8(ascii: "\n")
                         for try await byte in bytes {
                             buffer.append(byte)
-                            if buffer.count >= streamBufferSize {
+                            if byte == newline || buffer.count >= streamBufferSize {
                                 continuation.yield(buffer)
-                                buffer = Data(capacity: streamBufferSize)
+                                buffer.removeAll(keepingCapacity: true)
                             }
                         }
                         if !buffer.isEmpty {
@@ -102,8 +115,34 @@ enum NetworkingSupport {
                         continuation.finish(throwing: error)
                     }
                 }
+                continuation.onTermination = { @Sendable _ in
+                    task.cancel()
+                }
             }
             return (stream, response)
         #endif
     }
 }
+
+#if !os(Linux)
+    /// A session delegate that accepts self-signed / otherwise-untrusted server certificates.
+    ///
+    /// Installed only when ``OllamaConfiguration/allowsInsecureConnections`` is `true`.
+    final class InsecureTrustDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+        func urlSession(
+            _ session: URLSession,
+            didReceive challenge: URLAuthenticationChallenge,
+            completionHandler:
+                @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        ) {
+            if challenge.protectionSpace.authenticationMethod
+                == NSURLAuthenticationMethodServerTrust,
+                let trust = challenge.protectionSpace.serverTrust
+            {
+                completionHandler(.useCredential, URLCredential(trust: trust))
+            } else {
+                completionHandler(.performDefaultHandling, nil)
+            }
+        }
+    }
+#endif

@@ -198,7 +198,7 @@ private struct DeleteModelRequest: Codable {
 }
 
 /// Options for pulling models from the Ollama registry.
-public struct PullOptions {
+public struct PullOptions: Sendable {
     /// Whether to allow insecure (non-HTTPS) connections to the registry.
     public let allowInsecure: Bool
 
@@ -211,7 +211,7 @@ public struct PullOptions {
 }
 
 /// Options for pushing models to the Ollama registry.
-public struct PushOptions {
+public struct PushOptions: Sendable {
     /// Whether to allow insecure (non-HTTPS) connections to the registry.
     public let allowInsecure: Bool
 

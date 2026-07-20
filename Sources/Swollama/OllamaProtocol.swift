@@ -26,6 +26,65 @@ public protocol OllamaProtocol: Sendable {
     /// Configuration settings including timeouts, retries, and keep-alive behavior.
     var configuration: OllamaConfiguration { get }
 
+    /// Generates text completions as a stream of incremental response chunks.
+    ///
+    /// - Parameters:
+    ///   - prompt: The text prompt to send to the model.
+    ///   - model: The model to use for generation.
+    ///   - options: Generation options (system prompt, format, images, sampling parameters, …).
+    /// - Returns: An `AsyncThrowingStream` of ``GenerateResponse`` chunks.
+    /// - Throws: ``OllamaError`` if the request fails.
+    func generateText(
+        prompt: String,
+        model: OllamaModelName,
+        options: GenerationOptions
+    ) async throws -> AsyncThrowingStream<GenerateResponse, Error>
+
+    /// Generates chat completions as a stream of incremental response chunks.
+    ///
+    /// - Parameters:
+    ///   - messages: The conversation history.
+    ///   - model: The model to use for the completion.
+    ///   - options: Chat options (tools, format, sampling parameters, …).
+    /// - Returns: An `AsyncThrowingStream` of ``ChatResponse`` chunks.
+    /// - Throws: ``OllamaError`` if the request fails.
+    func chat(
+        messages: [ChatMessage],
+        model: OllamaModelName,
+        options: ChatOptions
+    ) async throws -> AsyncThrowingStream<ChatResponse, Error>
+
+    /// Generates vector embeddings for one or more inputs via `/api/embed`.
+    ///
+    /// - Parameters:
+    ///   - input: The text input to embed, either a single string or a batch.
+    ///   - model: The embedding model to use.
+    ///   - options: Embedding options (truncation, dimensions, model parameters).
+    /// - Returns: An ``EmbeddingResponse`` containing the embedding vectors.
+    /// - Throws: ``OllamaError`` if the request fails.
+    func generateEmbeddings(
+        input: EmbeddingInput,
+        model: OllamaModelName,
+        options: EmbeddingOptions
+    ) async throws -> EmbeddingResponse
+
+    /// Generates a single embedding via the legacy `/api/embeddings` endpoint.
+    ///
+    /// Prefer ``generateEmbeddings(input:model:options:)``; this exists for compatibility with
+    /// tooling that only exposes the legacy endpoint.
+    ///
+    /// - Parameters:
+    ///   - prompt: The text to embed.
+    ///   - model: The embedding model to use.
+    ///   - options: Embedding options; only model parameters and keep-alive apply.
+    /// - Returns: The embedding vector for the prompt.
+    /// - Throws: ``OllamaError`` if the request fails.
+    func generateEmbedding(
+        prompt: String,
+        model: OllamaModelName,
+        options: EmbeddingOptions
+    ) async throws -> LegacyEmbeddingResponse
+
     /// Lists all models available on the Ollama server.
     ///
     /// - Returns: An array of ``ModelListEntry`` objects containing model information.

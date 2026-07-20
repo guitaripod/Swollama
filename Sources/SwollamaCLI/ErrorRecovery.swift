@@ -46,6 +46,12 @@ class ErrorRecoveryHandler {
             case .serverError:
                 return .retry(attempts: 2, delay: 5.0)
 
+            case .rateLimited(let retryAfter):
+                return .retry(attempts: 3, delay: retryAfter ?? 5.0)
+
+            case .authenticationFailed:
+                return .skip
+
             case .unexpectedStatusCode(let code):
                 if code == 503 {
 

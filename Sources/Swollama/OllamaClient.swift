@@ -71,7 +71,10 @@ public actor OllamaClient: OllamaProtocol {
         let config = NetworkingSupport.createDefaultConfiguration()
         config.timeoutIntervalForRequest = configuration.timeoutInterval
 
-        self.session = NetworkingSupport.createSession(configuration: config)
+        self.session = NetworkingSupport.createSession(
+            configuration: config,
+            allowsInsecureConnections: configuration.allowsInsecureConnections
+        )
 
         self.decoder = JSONDecoder()
         self.decoder.dateDecodingStrategy = .custom { decoder in
@@ -118,6 +121,15 @@ public actor OllamaClient: OllamaProtocol {
         self.encoder.dateEncodingStrategy = .iso8601
     }
 
+    nonisolated func applyStandardHeaders(to request: inout URLRequest, hasBody: Bool) {
+        if hasBody {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        if let apiKey = configuration.apiKey, !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+    }
+
     func makeRequest(
         endpoint: String,
         method: String = "GET",
@@ -127,10 +139,7 @@ public actor OllamaClient: OllamaProtocol {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.httpBody = body
-
-        if body != nil {
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        }
+        applyStandardHeaders(to: &request, hasBody: body != nil)
 
         var lastError: Error?
         for attempt in 0...configuration.maxRetries {
@@ -144,32 +153,26 @@ public actor OllamaClient: OllamaProtocol {
                     throw OllamaError.invalidResponse
                 }
 
-                switch httpResponse.statusCode {
-                case 200...299:
-                    return data
-                case 404:
-                    throw OllamaError.modelNotFound
-                case 400:
-                    if let errorMessage = String(data: data, encoding: .utf8) {
-                        throw OllamaError.invalidParameters(errorMessage)
-                    }
-                    throw OllamaError.invalidParameters("Unknown error")
-                case 500...599:
-                    if let errorMessage = String(data: data, encoding: .utf8) {
-                        throw OllamaError.serverError(errorMessage)
-                    }
-                    throw OllamaError.serverError("Unknown server error")
-                default:
-                    throw OllamaError.unexpectedStatusCode(httpResponse.statusCode)
+                if let error = OllamaError.fromServer(
+                    statusCode: httpResponse.statusCode,
+                    body: data,
+                    retryAfter: Self.retryAfterSeconds(from: httpResponse)
+                ) {
+                    throw error
                 }
+                return data
             } catch {
                 lastError = error
 
                 let shouldRetry: Bool
+                var explicitDelay: TimeInterval?
                 if let ollamaError = error as? OllamaError {
                     switch ollamaError {
                     case .serverError, .networkError:
                         shouldRetry = true
+                    case .rateLimited(let retryAfter):
+                        shouldRetry = true
+                        explicitDelay = retryAfter
                     default:
                         shouldRetry = false
                     }
@@ -178,7 +181,10 @@ public actor OllamaClient: OllamaProtocol {
                 }
 
                 if shouldRetry && attempt < configuration.maxRetries {
-                    try await Task.sleep(for: .seconds(configuration.retryDelay))
+                    let delay =
+                        explicitDelay
+                        ?? Self.backoffDelay(base: configuration.retryDelay, attempt: attempt)
+                    try await Task.sleep(for: .seconds(delay))
                     continue
                 }
 
@@ -189,7 +195,19 @@ public actor OllamaClient: OllamaProtocol {
         throw OllamaError.networkError(lastError ?? URLError(.unknown))
     }
 
-    func streamRequest<T: Decodable>(
+    /// Parses a numeric `Retry-After` header into seconds.
+    static func retryAfterSeconds(from response: HTTPURLResponse) -> TimeInterval? {
+        guard let value = response.value(forHTTPHeaderField: "Retry-After") else { return nil }
+        return TimeInterval(value.trimmingCharacters(in: .whitespaces))
+    }
+
+    /// Computes an exponential backoff delay with jitter, capped at 30 seconds.
+    static func backoffDelay(base: TimeInterval, attempt: Int) -> TimeInterval {
+        let capped = min(base * pow(2.0, Double(attempt)), 30)
+        return capped + Double.random(in: 0...(capped * 0.25))
+    }
+
+    func streamRequest<T: Decodable & Sendable>(
         endpoint: String,
         method: String = "POST",
         body: Data?,
@@ -204,11 +222,13 @@ public actor OllamaClient: OllamaProtocol {
                     var request = URLRequest(url: url)
                     request.httpMethod = method
                     request.httpBody = body
-                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.timeoutInterval = configuration.streamTimeoutInterval
+                    applyStandardHeaders(to: &request, hasBody: true)
 
                     let (dataStream, response) = try await NetworkingSupport.enhancedStreamTask(
                         session: session,
-                        for: request
+                        for: request,
+                        configuration: configuration
                     )
 
                     guard let httpResponse = response as? HTTPURLResponse else {
@@ -217,24 +237,18 @@ public actor OllamaClient: OllamaProtocol {
 
                     guard (200...299).contains(httpResponse.statusCode) else {
                         var errorBody = Data()
-                        for try await chunk in dataStream {
-                            errorBody.append(chunk)
-                            if errorBody.count > 4096 { break }
+                        do {
+                            for try await chunk in dataStream {
+                                errorBody.append(chunk)
+                                if errorBody.count > 8192 { break }
+                            }
+                        } catch {
                         }
-
-                        let errorMessage =
-                            String(data: errorBody, encoding: .utf8) ?? "Unknown error"
-
-                        switch httpResponse.statusCode {
-                        case 404:
-                            throw OllamaError.modelNotFound
-                        case 400:
-                            throw OllamaError.invalidParameters(errorMessage)
-                        case 500...599:
-                            throw OllamaError.serverError(errorMessage)
-                        default:
-                            throw OllamaError.unexpectedStatusCode(httpResponse.statusCode)
-                        }
+                        throw OllamaError.fromServer(
+                            statusCode: httpResponse.statusCode,
+                            body: errorBody,
+                            retryAfter: Self.retryAfterSeconds(from: httpResponse)
+                        ) ?? OllamaError.unexpectedStatusCode(httpResponse.statusCode)
                     }
 
                     var buffer = Data()
@@ -245,28 +259,17 @@ public actor OllamaClient: OllamaProtocol {
 
                         while let newlineIndex = buffer.firstIndex(of: newline) {
                             let lineData = buffer[..<newlineIndex]
-                            if !lineData.isEmpty {
-                                do {
-                                    let decoded = try decoder.decode(T.self, from: lineData)
-                                    continuation.yield(decoded)
-                                } catch {
-                                    continuation.finish(throwing: OllamaError.decodingError(error))
-                                    return
-                                }
-                            }
-
                             buffer.removeSubrange(...newlineIndex)
+                            try Self.decodeStreamLine(
+                                lineData,
+                                decoder: decoder,
+                                into: continuation
+                            )
                         }
                     }
 
                     if !buffer.isEmpty {
-                        do {
-                            let decoded = try decoder.decode(T.self, from: buffer)
-                            continuation.yield(decoded)
-                        } catch {
-                            continuation.finish(throwing: OllamaError.decodingError(error))
-                            return
-                        }
+                        try Self.decodeStreamLine(buffer, decoder: decoder, into: continuation)
                     }
 
                     continuation.finish()
@@ -278,6 +281,30 @@ public actor OllamaClient: OllamaProtocol {
             continuation.onTermination = { @Sendable _ in
                 task.cancel()
             }
+        }
+    }
+
+    /// Decodes one NDJSON line, surfacing an in-band `{"error": ...}` line as a thrown error.
+    ///
+    /// Ollama can report a mid-stream failure by emitting a line of the form `{"error": "message"}`
+    /// instead of a normal response object. Decoding that straight into `T` would surface a confusing
+    /// ``OllamaError/decodingError(_:)``; this checks for the error field first and throws the real
+    /// ``OllamaError/serverError(_:)``.
+    private static func decodeStreamLine<T: Decodable & Sendable>(
+        _ line: Data,
+        decoder: JSONDecoder,
+        into continuation: AsyncThrowingStream<T, Error>.Continuation
+    ) throws {
+        if line.isEmpty { return }
+        if let streamError = try? decoder.decode(StreamErrorLine.self, from: line),
+            !streamError.error.isEmpty
+        {
+            throw OllamaError.serverError(streamError.error)
+        }
+        do {
+            continuation.yield(try decoder.decode(T.self, from: line))
+        } catch {
+            throw OllamaError.decodingError(error)
         }
     }
 
@@ -310,4 +337,9 @@ public actor OllamaClient: OllamaProtocol {
             throw OllamaError.decodingError(error)
         }
     }
+}
+
+/// An in-band error line emitted mid-stream by Ollama, e.g. `{"error": "model not found"}`.
+private struct StreamErrorLine: Decodable {
+    let error: String
 }

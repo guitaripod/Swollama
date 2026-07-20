@@ -7,34 +7,38 @@ import Foundation
 /// numeric UTC offset (`+03:00`) or `Z`. `Foundation.ISO8601DateFormatter` only reliably accepts
 /// millisecond precision, so fractional seconds are normalized to three digits before parsing.
 enum OllamaDate {
-    private static let fractionalFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
+    /// `ISO8601DateFormatter` is a reference type with mutable internal parsing state, so the shared
+    /// instances are owned by this lock-guarded holder to stay safe when multiple clients decode
+    /// concurrently. Wrapping them in an `@unchecked Sendable` holder keeps the type strict-concurrency
+    /// clean without relying on `nonisolated(unsafe)` (which would require Swift 5.10+).
+    private final class Formatters: @unchecked Sendable {
+        let lock = NSLock()
+        let fractional: ISO8601DateFormatter = {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return formatter
+        }()
+        let plain: ISO8601DateFormatter = {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime]
+            return formatter
+        }()
 
-    private static let plainFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
+        func date(from string: String) -> Date? {
+            lock.lock()
+            defer { lock.unlock() }
+            return fractional.date(from: string) ?? plain.date(from: string)
+        }
+    }
+
+    private static let formatters = Formatters()
 
     private static let fractionalRegex = try? NSRegularExpression(pattern: "\\.(\\d+)")
-
-    /// `ISO8601DateFormatter` is a reference type with mutable internal parsing state, so the shared
-    /// instances above are guarded to remain safe when multiple clients decode concurrently.
-    private static let lock = NSLock()
 
     /// Parses an Ollama timestamp string into a `Date`, or returns `nil` if it cannot be parsed.
     static func parse(_ string: String) -> Date? {
         let normalized = normalizeFractionalSeconds(string)
-        lock.lock()
-        defer { lock.unlock() }
-        if let date = fractionalFormatter.date(from: normalized) { return date }
-        if let date = plainFormatter.date(from: normalized) { return date }
-        if let date = fractionalFormatter.date(from: string) { return date }
-        if let date = plainFormatter.date(from: string) { return date }
-        return nil
+        return formatters.date(from: normalized) ?? formatters.date(from: string)
     }
 
     /// Decodes a `Date` from a keyed container, throwing a descriptive error on failure.

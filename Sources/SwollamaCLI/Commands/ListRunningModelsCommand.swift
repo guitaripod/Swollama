@@ -9,7 +9,7 @@ struct ListRunningModelsCommand: CommandProtocol {
     }
 
     func execute(with arguments: [String]) async throws {
-        print("Fetching running models...")
+        printToStderr("Fetching running models...")
         let models = try await client.listRunningModels()
 
         if models.isEmpty {

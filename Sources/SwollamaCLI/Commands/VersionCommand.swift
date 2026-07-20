@@ -9,7 +9,7 @@ struct VersionCommand: CommandProtocol {
     }
 
     func execute(with arguments: [String]) async throws {
-        print("Checking Ollama server version...\n")
+        printToStderr("Checking Ollama server version...\n")
 
         do {
             let version = try await client.getVersion()

@@ -14,7 +14,7 @@ import Foundation
 ///     keepAlive: 600
 /// )
 /// ```
-public struct ChatOptions {
+public struct ChatOptions: Sendable {
     /// Tool definitions to make available to the model for function calling.
     public let tools: [ToolDefinition]?
 

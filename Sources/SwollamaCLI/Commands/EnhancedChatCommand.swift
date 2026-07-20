@@ -464,6 +464,11 @@ class EnhancedChatCommand: CommandProtocol {
                 printError("Error decoding response: \(error.localizedDescription)")
             case .unexpectedStatusCode(let code):
                 printError("Unexpected status code: \(code)")
+            case .authenticationFailed:
+                printError(ollamaError.errorDescription ?? "Authentication failed")
+                printWarning("Set an API key via OllamaConfiguration to authenticate.")
+            case .rateLimited:
+                printError(ollamaError.errorDescription ?? "Rate limited")
             case .httpError(let statusCode, let message):
                 if let message = message {
                     printError("HTTP error \(statusCode): \(message)")
@@ -489,6 +494,7 @@ class EnhancedChatCommand: CommandProtocol {
             throw CLIError.invalidArgument("Invalid model name format: '\(arguments[0])'")
         }
 
+        var promptParts: [String] = []
         var i = 1
         while i < arguments.count {
             switch arguments[i] {
@@ -520,12 +526,21 @@ class EnhancedChatCommand: CommandProtocol {
             case "--auto-save":
                 configuration.autoSave = true
                 if i + 1 < arguments.count && !arguments[i + 1].starts(with: "--") {
-                    configuration.savePath = arguments[i + 1]
+                    i += 1
+                    configuration.savePath = arguments[i]
                 }
+            case let arg where arg.hasPrefix("--"):
+                throw CLIError.invalidArgument("Unknown option: \(arg)")
             default:
-                break
+                promptParts.append(arguments[i])
             }
             i += 1
+        }
+
+        let oneShotPrompt = resolveOneShotPrompt(promptParts)
+        if let prompt = oneShotPrompt {
+            try await runOneShot(model: model, prompt: prompt)
+            return
         }
 
         clearScreen()
@@ -543,6 +558,55 @@ class EnhancedChatCommand: CommandProtocol {
             let filename = configuration.savePath ?? "chat_\(Date().timeIntervalSince1970).json"
             _ = saveConversation(messages: messages, filename: filename)
         }
+    }
+
+    /// Determines the prompt for a non-interactive one-shot chat.
+    ///
+    /// Uses positional arguments when present, otherwise reads piped standard input. Returns `nil`
+    /// when neither is available, signalling that the interactive session should run.
+    private func resolveOneShotPrompt(_ promptParts: [String]) -> String? {
+        if !promptParts.isEmpty {
+            return promptParts.joined(separator: " ")
+        }
+        if isatty(fileno(stdin)) == 0 {
+            let piped = String(
+                data: FileHandle.standardInput.readDataToEndOfFile(),
+                encoding: .utf8
+            )
+            let trimmed = piped?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        return nil
+    }
+
+    /// Streams a single chat completion to standard output; thinking goes to standard error so the
+    /// answer on stdout stays clean and pipeable.
+    private func runOneShot(model: OllamaModelName, prompt: String) async throws {
+        let options = ChatOptions(
+            format: configuration.format,
+            keepAlive: configuration.keepAlive,
+            think: configuration.think
+        )
+        let messages = [ChatMessage(role: .user, content: prompt)]
+        var thinkingStarted = false
+        for try await response in try await client.chat(
+            messages: messages,
+            model: model,
+            options: options
+        ) {
+            if let thinking = response.message.thinking, !thinking.isEmpty {
+                if !thinkingStarted {
+                    FileHandle.standardError.write(Data("[thinking] ".utf8))
+                    thinkingStarted = true
+                }
+                FileHandle.standardError.write(Data(thinking.utf8))
+            }
+            let content = response.message.content
+            if !content.isEmpty {
+                print(content, terminator: "")
+            }
+        }
+        print("")
     }
 
     private func installSignalHandlers() {

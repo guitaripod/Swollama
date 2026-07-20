@@ -27,8 +27,9 @@ A comprehensive, protocol-oriented Swift client for the Ollama API. This package
 
 ## Requirements
 
-- macOS 14+ / iOS 17+ / Linux
-- Swift 5.9+
+- macOS 14+ / iOS 17+ / tvOS 17+ / watchOS 10+ / visionOS 1+ / Linux
+- Swift 5.9+ (builds clean under Swift 6 strict concurrency)
+- Zero external dependencies
 - [Ollama](https://ollama.ai) installed and running
 
 ## Installation
@@ -39,7 +40,7 @@ Add Swollama to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/guitaripod/Swollama.git", from: "1.0.0")
+    .package(url: "https://github.com/guitaripod/Swollama.git", from: "4.2.0")
 ]
 ```
 
@@ -94,11 +95,47 @@ for try await response in responses {
 }
 ```
 
+Prefer the whole answer at once? Use the non-streaming conveniences:
+
+```swift
+let text = try await client.completeText(prompt: "Name three primary colors.", model: model)
+let reply = try await client.completeChat(
+    messages: [ChatMessage(role: .user, content: "Say hi.")],
+    model: model
+)
+print(reply.content)
+```
+
+### Authenticated & Cloud Hosts
+
+Set an API key to reach an authenticated deployment or Ollama's cloud. It is sent as an
+`Authorization: Bearer` header on every request, including streaming.
+
+```swift
+let client = OllamaClient(
+    baseURL: URL(string: "https://ollama.example.com")!,
+    configuration: OllamaConfiguration(apiKey: "your-api-key")
+)
+```
+
 ## CLI Usage
 
 Interactive chat:
 ```bash
 swollama chat llama3.2
+```
+
+One-shot chat (prints only the answer on stdout — pipeable):
+```bash
+swollama chat llama3.2 "Summarize the plot of Dune in one sentence"
+echo "Translate 'hello' to French" | swollama chat llama3.2
+```
+
+Point at a remote or authenticated host with environment variables:
+```bash
+export OLLAMA_HOST=192.168.1.10:11434
+export OLLAMA_API_KEY=your-api-key   # sent as Authorization: Bearer
+swollama list
 ```
 
 Autonomous agent:

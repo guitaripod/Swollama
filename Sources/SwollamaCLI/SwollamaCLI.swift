@@ -38,13 +38,21 @@ struct SwollamaCLI {
         if let hostIndex = arguments.firstIndex(of: "--host"),
             hostIndex + 1 < arguments.count
         {
-            guard let url = URL(string: arguments[hostIndex + 1]) else {
-                print("Error: Invalid URL '\(arguments[hostIndex + 1])'")
+            guard let url = normalizeHostURL(arguments[hostIndex + 1]) else {
+                printToStderr("Error: Invalid URL '\(arguments[hostIndex + 1])'")
                 exit(1)
             }
             baseURL = url
 
             arguments.removeSubrange(hostIndex...hostIndex + 1)
+        } else if let envHost = ProcessInfo.processInfo.environment["OLLAMA_HOST"],
+            !envHost.isEmpty
+        {
+            guard let url = normalizeHostURL(envHost) else {
+                printToStderr("Error: Invalid OLLAMA_HOST '\(envHost)'")
+                exit(1)
+            }
+            baseURL = url
         } else {
 
             baseURL = URL(string: "http://localhost:11434")!
@@ -57,7 +65,12 @@ struct SwollamaCLI {
 
         let command = arguments[0]
         let remainingArgs = Array(arguments.dropFirst())
-        let client = OllamaClient(baseURL: baseURL)
+
+        let apiKey = ProcessInfo.processInfo.environment["OLLAMA_API_KEY"]
+        let client = OllamaClient(
+            baseURL: baseURL,
+            configuration: OllamaConfiguration(apiKey: apiKey?.isEmpty == false ? apiKey : nil)
+        )
 
         do {
             switch command.lowercased() {
@@ -142,11 +155,17 @@ struct SwollamaCLI {
               test [type]             Test new API features
               help                    Show this help message
 
+            Environment:
+              OLLAMA_HOST             Default host (e.g. 127.0.0.1:11434); --host overrides it
+              OLLAMA_API_KEY          Bearer token sent with every request (auth'd/cloud hosts)
+              NO_COLOR                Disable ANSI colors
+
             Examples:
               swollama list
               swollama --host http://remote:11434 list
               swollama show qwen3 --verbose
               swollama chat qwen3 --think
+              swollama chat qwen3 "Summarize the plot of Dune in one line"
               swollama agent "what is ollama's new engine"
               swollama generate codellama --prompt "def fib(n):" --think
               swollama pull llama3.2
@@ -156,13 +175,12 @@ struct SwollamaCLI {
               swollama version
 
             Linux Users:
-              - See linux/README.md for deployment guide
               - Use --system-info for diagnostics
             """
         )
     }
 
-    static let version = "4.1.0"
+    static let version = "4.2.0"
 
     static func printVersion() {
         print(
@@ -190,6 +208,22 @@ struct SwollamaCLI {
             - Memory optimization: Active
             """
         )
+    }
+
+    /// Normalizes an Ollama host string (with or without a scheme) into a URL.
+    ///
+    /// Accepts `http://host:port`, `host:port`, `host`, or `:port` (localhost is assumed when the
+    /// host is omitted), matching the flexibility of Ollama's own `OLLAMA_HOST`.
+    static func normalizeHostURL(_ raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.contains("://") {
+            return URL(string: trimmed)
+        }
+        if trimmed.hasPrefix(":") {
+            return URL(string: "http://localhost\(trimmed)")
+        }
+        return URL(string: "http://\(trimmed)")
     }
 
     static func getPlatformName() -> String {

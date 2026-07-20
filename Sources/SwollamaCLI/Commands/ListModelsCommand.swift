@@ -11,7 +11,7 @@ struct ListModelsCommand: CommandProtocol {
     }
 
     func execute(with arguments: [String]) async throws {
-        print("Fetching available models...")
+        printToStderr("Fetching available models...")
         let models = try await client.listModels()
             .sorted { $0.name.lowercased() < $1.name.lowercased() }
 

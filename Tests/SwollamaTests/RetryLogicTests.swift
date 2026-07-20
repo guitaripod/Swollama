@@ -187,15 +187,15 @@ final class RetryLogicTests: XCTestCase {
         }
     }
 
-    func testUnexpectedStatusCodeDoesNotRetry() async throws {
+    func testClientErrorDoesNotRetry() async throws {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(
                 url: request.url!,
-                statusCode: 429,
+                statusCode: 400,
                 httpVersion: "HTTP/1.1",
                 headerFields: nil
             )!
-            return (response, Data())
+            return (response, #"{"error":"invalid request"}"#.data(using: .utf8)!)
         }
 
         let client = createTestClient(maxRetries: 3, retryDelay: 0.01)
@@ -204,19 +204,103 @@ final class RetryLogicTests: XCTestCase {
             _ = try await client.listModels()
             XCTFail("Should have thrown")
         } catch let error as OllamaError {
-            guard case .unexpectedStatusCode(let code) = error else {
-                XCTFail("Expected unexpectedStatusCode, got \(error)")
+            guard case .invalidParameters(let message) = error else {
+                XCTFail("Expected invalidParameters, got \(error)")
                 return
             }
-            XCTAssertEqual(code, 429)
+            XCTAssertEqual(message, "invalid request", "Should surface the parsed error body")
             XCTAssertEqual(
                 MockURLProtocol.requestCount,
                 1,
-                "Should not retry unexpected status codes"
+                "Should not retry 4xx client errors"
             )
         } catch {
             XCTFail("Unexpected error type: \(error)")
         }
+    }
+
+    func testRateLimitRetriesAndHonorsRetryAfter() async throws {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 429,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Retry-After": "0"]
+            )!
+            return (response, #"{"error":"slow down"}"#.data(using: .utf8)!)
+        }
+
+        let client = createTestClient(maxRetries: 2, retryDelay: 0.01)
+
+        do {
+            _ = try await client.listModels()
+            XCTFail("Should have thrown")
+        } catch let error as OllamaError {
+            guard case .rateLimited = error else {
+                XCTFail("Expected rateLimited, got \(error)")
+                return
+            }
+            XCTAssertEqual(
+                MockURLProtocol.requestCount,
+                3,
+                "Should retry rate-limited requests (once + 2 retries)"
+            )
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testAuthenticationFailureDoesNotRetry() async throws {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 401,
+                httpVersion: "HTTP/1.1",
+                headerFields: nil
+            )!
+            return (response, #"{"error":"unauthorized"}"#.data(using: .utf8)!)
+        }
+
+        let client = createTestClient(maxRetries: 3, retryDelay: 0.01)
+
+        do {
+            _ = try await client.listModels()
+            XCTFail("Should have thrown")
+        } catch let error as OllamaError {
+            guard case .authenticationFailed(let message) = error else {
+                XCTFail("Expected authenticationFailed, got \(error)")
+                return
+            }
+            XCTAssertEqual(message, "unauthorized")
+            XCTAssertEqual(MockURLProtocol.requestCount, 1, "Should not retry auth failures")
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
+        }
+    }
+
+    func testAPIKeySetsAuthorizationHeader() async throws {
+        let capturedAuth = HeaderCapture()
+        MockURLProtocol.requestHandler = { request in
+            capturedAuth.value = request.value(forHTTPHeaderField: "Authorization")
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: "HTTP/1.1",
+                headerFields: nil
+            )!
+            return (response, #"{"models":[]}"#.data(using: .utf8)!)
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let client = OllamaClient(
+            baseURL: URL(string: "http://localhost:11434")!,
+            configuration: OllamaConfiguration(maxRetries: 0, apiKey: "secret-token"),
+            session: URLSession(configuration: config)
+        )
+
+        _ = try await client.listModels()
+        XCTAssertEqual(capturedAuth.value, "Bearer secret-token")
     }
 
     func testZeroRetriesDisablesRetry() async throws {
@@ -293,6 +377,10 @@ final class RetryLogicTests: XCTestCase {
             session: session
         )
     }
+}
+
+final class HeaderCapture: @unchecked Sendable {
+    var value: String?
 }
 
 class MockURLProtocol: URLProtocol {

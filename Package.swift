@@ -4,46 +4,33 @@
 import Foundation
 import PackageDescription
 
-// Performance optimization flags for Linux
-let linuxSwiftSettings: [SwiftSetting] = [
-    .unsafeFlags([
-        "-cross-module-optimization",
-        "-whole-module-optimization",
-        "-Osize"
-    ], .when(platforms: [.linux], configuration: .release)),
-]
-
-let linuxLinkerSettings: [LinkerSetting] = [
-    .unsafeFlags([
-        "-Xlinker", "-z", "-Xlinker", "relro",
-        "-Xlinker", "-z", "-Xlinker", "now"
-    ], .when(platforms: [.linux]))
-]
-
 let package = Package(
     name: "Swollama",
     platforms: [
         .macOS(.v14),
-        .iOS(.v17)
+        .iOS(.v17),
+        .tvOS(.v17),
+        .watchOS(.v10),
+        .visionOS(.v1),
     ],
     products: [
         .library(
             name: "Swollama",
-            targets: ["Swollama"]),
+            targets: ["Swollama"]
+        ),
         .executable(
             name: "SwollamaCLI",
-            targets: ["SwollamaCLI"])
+            targets: ["SwollamaCLI"]
+        ),
     ],
     targets: [
         .target(
-            name: "Swollama",
-            swiftSettings: linuxSwiftSettings,
-            linkerSettings: linuxLinkerSettings),
+            name: "Swollama"
+        ),
         .executableTarget(
             name: "SwollamaCLI",
-            dependencies: ["Swollama"],
-            swiftSettings: linuxSwiftSettings,
-            linkerSettings: linuxLinkerSettings),
+            dependencies: ["Swollama"]
+        ),
         .testTarget(
             name: "SwollamaTests",
             dependencies: ["Swollama"]

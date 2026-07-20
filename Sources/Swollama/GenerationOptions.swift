@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Provides comprehensive control over generation behavior including multimodal inputs,
 /// output formatting, system prompts, and conversation context.
-public struct GenerationOptions {
+public struct GenerationOptions: Sendable {
     /// Text to append after the model's generated response (for fill-in-the-middle scenarios).
     public let suffix: String?
 

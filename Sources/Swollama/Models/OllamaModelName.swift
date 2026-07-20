@@ -21,7 +21,7 @@ import Foundation
 /// }
 /// print(model3.namespace)
 /// ```
-public struct OllamaModelName {
+public struct OllamaModelName: Sendable, Hashable, CustomStringConvertible {
     /// The model's namespace (e.g., "library", "username"). Optional for local-only models.
     public let namespace: String?
 
@@ -77,4 +77,7 @@ public struct OllamaModelName {
         }
         return "\(name):\(tag)"
     }
+
+    /// The fully-qualified model name. Equivalent to ``fullName``.
+    public var description: String { fullName }
 }

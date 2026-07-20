@@ -390,5 +390,19 @@ final class APICoverageTests: XCTestCase {
                 _ = (call.function.name, call.id ?? "-", call.function.arguments)
             }
         }
+
+        _ = try await client.completeText(prompt: "x", model: model)
+        let reply = try await client.completeChat(
+            messages: [ChatMessage(role: .user, content: "x")],
+            model: model
+        )
+        _ = reply.content
+        _ = try await client.generateText(prompt: "x", model: model).collect()
+
+        let authed = OllamaClient(
+            baseURL: URL(string: "https://ollama.example.com")!,
+            configuration: OllamaConfiguration(apiKey: "your-api-key")
+        )
+        _ = authed.configuration.apiKey
     }
 }
