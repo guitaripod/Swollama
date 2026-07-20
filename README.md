@@ -18,11 +18,12 @@ A comprehensive, protocol-oriented Swift client for the Ollama API. This package
 - Multimodal image inputs and model `capabilities` (vision, tools, thinking, embedding, insert, audio)
 - Rich model introspection (`model_info`, `tensors`, `capabilities`, `context_length`, `requires`)
 - Autonomous agents with web search capabilities
-- Native async/await and AsyncSequence streaming
-- Type-safe API with comprehensive error handling
-- Thread-safe implementation using Swift actors
-- Automatic retry logic with exponential backoff
-- Cross-platform (macOS, Linux, iOS)
+- Authenticated & cloud hosts via API key (`Authorization: Bearer`)
+- Native async/await and AsyncSequence streaming, with non-streaming conveniences
+- Type-safe API with comprehensive error handling (parses Ollama's error bodies)
+- Thread-safe Swift actors; `Sendable` throughout, clean under Swift 6 strict concurrency
+- Automatic retry with exponential backoff; honors HTTP 429 `Retry-After`
+- Cross-platform (macOS, iOS, tvOS, watchOS, visionOS, Linux)
 - Zero external dependencies
 
 ## Requirements
